@@ -1,0 +1,23 @@
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Android / iOS
+android/.gradle/
+ios/Pods/
+
+# Node
+node_modules/
+
+# Firebase / Secrets
+serviceAccountKey.json
+*.env
+
+# OS junk
+.DS_Store
+Thumbs.db
+# IDE
+.idea/
+*.iml
