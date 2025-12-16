@@ -164,4 +164,10 @@ class ProductModel with _$ProductModel {
   bool get isAvailable => status == 'active' && inStock && !isDeleted;
   String get displayPrice => '\$$sellingPrice';
   String get originalPrice => compareAtPrice != null ? '\$$compareAtPrice' : '';
+// Computed properties
+
+bool get isTrending =>
+    popularityScore >= 0.7 ||
+    viewCount >= 100 ||
+    addToCartCount >= 50;
 }

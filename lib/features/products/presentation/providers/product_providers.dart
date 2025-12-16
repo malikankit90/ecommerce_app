@@ -7,7 +7,7 @@ import '../../data/repositories/product_repository.dart';
 import '../../data/services/product_firestore_service.dart';
 
 /// =======================================================
-/// Service Providers
+/// Firestore Service Provider
 /// =======================================================
 
 final productFirestoreServiceProvider =
@@ -86,7 +86,9 @@ final productByIdProvider =
       return;
     }
 
-    yield* ref.read(productRepositoryProvider).getProductStream(productId);
+    yield* ref
+        .read(productRepositoryProvider)
+        .getProductStream(productId);
   },
 );
 
@@ -111,11 +113,15 @@ final productVariantsProvider =
 );
 
 /// =======================================================
-/// Products by Category
+/// ✅ PRODUCTS BY CATEGORY (BUG FIXED, API-SAFE)
+/// =======================================================
+/// - Uses EXISTING repository APIs only
+/// - Prevents stale category reuse
+/// - Single source of truth for ProductListScreen
 /// =======================================================
 
 final productsByCategoryProvider =
-    FutureProvider.family<List<ProductModel>, String>(
+    FutureProvider.family<List<ProductModel>, String?>(
   (ref, categoryId) async {
     final authState = ref.watch(authStateProvider);
 
@@ -123,8 +129,17 @@ final productsByCategoryProvider =
       return [];
     }
 
-    return ref.read(productRepositoryProvider)
-        .getProductsByCategory(categoryId);
+    final repository = ref.read(productRepositoryProvider);
+
+    // ✅ No category → get ALL active products (via existing stream API)
+    if (categoryId == null || categoryId.isEmpty) {
+      final stream =
+          repository.getProductsStream(status: 'active');
+      return await stream.first;
+    }
+
+    // ✅ Category-specific products
+    return repository.getProductsByCategory(categoryId);
   },
 );
 
@@ -146,7 +161,7 @@ final searchProductsProvider =
 );
 
 /// =======================================================
-/// Product Controller (for actions)
+/// Product Controller (Actions / Admin)
 /// =======================================================
 
 final productControllerProvider =
@@ -172,7 +187,7 @@ class ProductController extends StateNotifier<AsyncValue<void>> {
   }
 
   /// ---------------------------------------------------
-  /// Create product (admin feature)
+  /// Create product (admin)
   /// ---------------------------------------------------
   Future<void> createProduct(ProductModel product) async {
     state = const AsyncValue.loading();
@@ -182,8 +197,8 @@ class ProductController extends StateNotifier<AsyncValue<void>> {
   }
 
   /// ---------------------------------------------------
-  /// Update product (admin feature)
-  /// ---------------------------------------------------
+  /// Update product (admin)
+   /// ---------------------------------------------------
   Future<void> updateProduct(
     String productId,
     Map<String, dynamic> data,
