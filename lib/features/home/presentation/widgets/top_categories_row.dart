@@ -5,7 +5,10 @@ import '../../../categories/data/models/category_model.dart';
 class TopCategoriesRow extends StatelessWidget {
   final List<CategoryModel> categories;
 
-  const TopCategoriesRow({super.key, required this.categories});
+  const TopCategoriesRow({
+    super.key,
+    required this.categories,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +22,10 @@ class TopCategoriesRow extends StatelessWidget {
           return InkWell(
             borderRadius: BorderRadius.circular(40),
             onTap: () {
+              // ✅ ROOT CATEGORY → CATEGORY LANDING
               context.push(
-                '/products?categoryId=${category.id}',
+                '/category',
+                extra: category,
               );
             },
             child: Column(
@@ -29,12 +34,16 @@ class TopCategoriesRow extends StatelessWidget {
                   radius: 28,
                   child: Text(
                     category.name.characters.first,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   category.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12),
                 ),
               ],

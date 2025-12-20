@@ -1,5 +1,3 @@
-// lib/features/products/presentation/widgets/product_card.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +10,7 @@ import '../../../cart/data/models/cart_item_model.dart';
 import '../../../wishlist/data/models/wishlist_item_model.dart';
 
 enum ProductCardVariant {
-  compact,   // Home
+  compact,   // Home (horizontal)
   catalog,   // Product list
   detailed,  // Recommendations
 }
@@ -30,13 +28,26 @@ class ProductCard extends ConsumerWidget {
   double get _height {
     switch (variant) {
       case ProductCardVariant.compact:
-        return 220;
+        return 240;
       case ProductCardVariant.catalog:
-        return 280;
+        return 300;
       case ProductCardVariant.detailed:
         return 320;
     }
   }
+
+  double get _imageHeight {
+    switch (variant) {
+      case ProductCardVariant.compact:
+        return 120;
+      case ProductCardVariant.catalog:
+      case ProductCardVariant.detailed:
+        return 150;
+    }
+  }
+
+  int get _titleMaxLines =>
+      variant == ProductCardVariant.compact ? 2 : 3;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,58 +55,64 @@ class ProductCard extends ConsumerWidget {
 
     return SizedBox(
       height: _height,
-      width: variant == ProductCardVariant.compact ? 160 : double.infinity,
+      width: variant == ProductCardVariant.compact ? 180 : double.infinity,
       child: InkWell(
         onTap: () => context.push('/products/${product.id}'),
         child: Card(
-          clipBehavior: Clip.antiAlias,
           elevation: 2,
+          clipBehavior: Clip.antiAlias,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ImageSection(product: product),
+              /// IMAGE
+              _ImageSection(
+                product: product,
+                height: _imageHeight,
+              ),
 
-              // CONTENT — NO Expanded
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Badges(product: product),
-                    const SizedBox(height: 4),
+              /// CONTENT (CLAMPED)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Badges(product: product),
+                      const SizedBox(height: 4),
 
-                    Text(
-                      product.brandName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey,
+                      Text(
+                        product.brandName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 2),
+                      const SizedBox(height: 2),
 
-                    Text(
-                      product.name,
-                      maxLines: variant == ProductCardVariant.compact ? 2 : 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      Text(
+                        product.name,
+                        maxLines: _titleMaxLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 6),
+                      const Spacer(),
 
-                    _PriceRow(product: product),
-
-                    const SizedBox(height: 8),
-
-                    _ActionsRow(
-                      product: product,
-                      userId: user?.uid,
-                    ),
-                  ],
+                      _PriceRow(product: product),
+                    ],
+                  ),
                 ),
+              ),
+
+              /// ACTIONS (PINNED — NEVER OVERFLOWS)
+              _ActionsRow(
+                product: product,
+                userId: user?.uid,
               ),
             ],
           ),
@@ -109,19 +126,26 @@ class ProductCard extends ConsumerWidget {
 
 class _ImageSection extends StatelessWidget {
   final ProductModel product;
+  final double height;
 
-  const _ImageSection({required this.product});
+  const _ImageSection({
+    required this.product,
+    required this.height,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120,
+      height: height,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
         children: [
           product.thumbnailUrl.isNotEmpty
-              ? Image.network(product.thumbnailUrl, fit: BoxFit.cover)
+              ? Image.network(
+                  product.thumbnailUrl,
+                  fit: BoxFit.cover,
+                )
               : Container(
                   color: Colors.grey.shade200,
                   child: const Icon(Icons.image_not_supported),
@@ -244,15 +268,51 @@ class _ActionsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton(
-            onPressed: (userId == null || !product.inStock)
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: (userId == null || !product.inStock)
+                  ? null
+                  : () {
+                      ref
+                          .read(cartControllerProvider.notifier)
+                          .addToCart(
+                            CartItemModel(
+                              id: product.id,
+                              userId: userId!,
+                              productId: product.id,
+                              productName: product.name,
+                              productSlug: product.slug,
+                              brandName: product.brandName,
+                              thumbnailUrl: product.thumbnailUrl,
+                              price: product.sellingPrice,
+                              compareAtPrice: product.compareAtPrice,
+                              quantity: 1,
+                              availableStock: product.availableStock,
+                              inStock: product.inStock,
+                              addedAt: DateTime.now(),
+                            ),
+                          );
+                    },
+              child: const Text(
+                'Add',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            onPressed: userId == null
                 ? null
                 : () {
-                    ref.read(cartControllerProvider.notifier).addToCart(
-                          CartItemModel(
+                    ref
+                        .read(wishlistControllerProvider.notifier)
+                        .toggleWishlist(
+                          product.id,
+                          WishlistItemModel(
                             id: product.id,
                             userId: userId!,
                             productId: product.id,
@@ -262,43 +322,15 @@ class _ActionsRow extends ConsumerWidget {
                             thumbnailUrl: product.thumbnailUrl,
                             price: product.sellingPrice,
                             compareAtPrice: product.compareAtPrice,
-                            quantity: 1,
-                            availableStock: product.availableStock,
                             inStock: product.inStock,
+                            availableStock: product.availableStock,
                             addedAt: DateTime.now(),
                           ),
                         );
                   },
-            child: const Text('Add', style: TextStyle(fontSize: 12)),
           ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.favorite_border),
-          onPressed: userId == null
-              ? null
-              : () {
-                  ref
-                      .read(wishlistControllerProvider.notifier)
-                      .toggleWishlist(
-                        product.id,
-                        WishlistItemModel(
-                          id: product.id,
-                          userId: userId!,
-                          productId: product.id,
-                          productName: product.name,
-                          productSlug: product.slug,
-                          brandName: product.brandName,
-                          thumbnailUrl: product.thumbnailUrl,
-                          price: product.sellingPrice,
-                          compareAtPrice: product.compareAtPrice,
-                          inStock: product.inStock,
-                          availableStock: product.availableStock,
-                          addedAt: DateTime.now(),
-                        ),
-                      );
-                },
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

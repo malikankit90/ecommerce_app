@@ -1,63 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../categories/data/models/category_model.dart';
+import '../../../categories/presentation/widgets/category_icon_item.dart';
+import 'section_header.dart';
 
-class CategoriesSection extends StatelessWidget {
-  final List<CategoryModel> categories;
+class CategorySectionRow extends StatelessWidget {
+  final CategoryModel rootCategory;
+  final List<CategoryModel> subCategories;
 
-  const CategoriesSection({super.key, required this.categories});
+  const CategorySectionRow({
+    super.key,
+    required this.rootCategory,
+    required this.subCategories,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox.shrink();
+    if (subCategories.isEmpty) return const SizedBox.shrink();
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Categories',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: categories.length,
-            itemBuilder: (_, i) {
-              final category = categories[i];
-              return InkWell(
-                onTap: () {
-                  context.push(
-                    '/products?categoryId=${category.id}',
-                  );
-                },
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      child: Text(category.name.characters.first),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      category.name,
-                      style: const TextStyle(fontSize: 11),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: rootCategory.name),
+
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: subCategories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (_, index) {
+              return CategoryIconItem(
+                category: subCategories[index],
               );
             },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

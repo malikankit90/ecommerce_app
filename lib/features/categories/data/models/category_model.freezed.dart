@@ -26,21 +26,26 @@ mixin _$CategoryModel {
   String get description => throw _privateConstructorUsedError;
   String get imageUrl => throw _privateConstructorUsedError;
   String? get iconUrl => throw _privateConstructorUsedError;
-  String? get bannerUrl => throw _privateConstructorUsedError; // Hierarchy
+  String? get bannerUrl => throw _privateConstructorUsedError;
+
+  /// 🔑 HIERARCHY
   String? get parentCategoryId => throw _privateConstructorUsedError;
-  List<String> get ancestorIds => throw _privateConstructorUsedError;
   int get level => throw _privateConstructorUsedError;
-  int get sortOrder => throw _privateConstructorUsedError; // SEO
-  String get metaTitle => throw _privateConstructorUsedError;
-  String get metaDescription => throw _privateConstructorUsedError; // Status
+  int get sortOrder => throw _privateConstructorUsedError;
+
+  /// STATUS
   bool get isActive => throw _privateConstructorUsedError;
-  bool get isFeatured => throw _privateConstructorUsedError; // Stats
-  int get productCount => throw _privateConstructorUsedError; // Timestamps
+  bool get isFeatured => throw _privateConstructorUsedError;
+  bool get isDeleted => throw _privateConstructorUsedError;
+
+  /// STATS
+  int get productCount => throw _privateConstructorUsedError;
+
+  /// TIMESTAMPS
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
-  DateTime? get updatedAt => throw _privateConstructorUsedError; // Metadata
-  bool get isDeleted => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
 
   /// Serializes this CategoryModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -67,17 +72,14 @@ abstract class $CategoryModelCopyWith<$Res> {
       String? iconUrl,
       String? bannerUrl,
       String? parentCategoryId,
-      List<String> ancestorIds,
       int level,
       int sortOrder,
-      String metaTitle,
-      String metaDescription,
       bool isActive,
       bool isFeatured,
+      bool isDeleted,
       int productCount,
       @TimestampConverter() DateTime? createdAt,
-      @TimestampConverter() DateTime? updatedAt,
-      bool isDeleted});
+      @TimestampConverter() DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -103,17 +105,14 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
     Object? iconUrl = freezed,
     Object? bannerUrl = freezed,
     Object? parentCategoryId = freezed,
-    Object? ancestorIds = null,
     Object? level = null,
     Object? sortOrder = null,
-    Object? metaTitle = null,
-    Object? metaDescription = null,
     Object? isActive = null,
     Object? isFeatured = null,
+    Object? isDeleted = null,
     Object? productCount = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
-    Object? isDeleted = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -148,10 +147,6 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
           ? _value.parentCategoryId
           : parentCategoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      ancestorIds: null == ancestorIds
-          ? _value.ancestorIds
-          : ancestorIds // ignore: cast_nullable_to_non_nullable
-              as List<String>,
       level: null == level
           ? _value.level
           : level // ignore: cast_nullable_to_non_nullable
@@ -160,14 +155,6 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
           ? _value.sortOrder
           : sortOrder // ignore: cast_nullable_to_non_nullable
               as int,
-      metaTitle: null == metaTitle
-          ? _value.metaTitle
-          : metaTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      metaDescription: null == metaDescription
-          ? _value.metaDescription
-          : metaDescription // ignore: cast_nullable_to_non_nullable
-              as String,
       isActive: null == isActive
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
@@ -175,6 +162,10 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
       isFeatured: null == isFeatured
           ? _value.isFeatured
           : isFeatured // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isDeleted: null == isDeleted
+          ? _value.isDeleted
+          : isDeleted // ignore: cast_nullable_to_non_nullable
               as bool,
       productCount: null == productCount
           ? _value.productCount
@@ -188,10 +179,6 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      isDeleted: null == isDeleted
-          ? _value.isDeleted
-          : isDeleted // ignore: cast_nullable_to_non_nullable
-              as bool,
     ) as $Val);
   }
 }
@@ -213,17 +200,14 @@ abstract class _$$CategoryModelImplCopyWith<$Res>
       String? iconUrl,
       String? bannerUrl,
       String? parentCategoryId,
-      List<String> ancestorIds,
       int level,
       int sortOrder,
-      String metaTitle,
-      String metaDescription,
       bool isActive,
       bool isFeatured,
+      bool isDeleted,
       int productCount,
       @TimestampConverter() DateTime? createdAt,
-      @TimestampConverter() DateTime? updatedAt,
-      bool isDeleted});
+      @TimestampConverter() DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -247,17 +231,14 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
     Object? iconUrl = freezed,
     Object? bannerUrl = freezed,
     Object? parentCategoryId = freezed,
-    Object? ancestorIds = null,
     Object? level = null,
     Object? sortOrder = null,
-    Object? metaTitle = null,
-    Object? metaDescription = null,
     Object? isActive = null,
     Object? isFeatured = null,
+    Object? isDeleted = null,
     Object? productCount = null,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
-    Object? isDeleted = null,
   }) {
     return _then(_$CategoryModelImpl(
       id: null == id
@@ -292,10 +273,6 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
           ? _value.parentCategoryId
           : parentCategoryId // ignore: cast_nullable_to_non_nullable
               as String?,
-      ancestorIds: null == ancestorIds
-          ? _value._ancestorIds
-          : ancestorIds // ignore: cast_nullable_to_non_nullable
-              as List<String>,
       level: null == level
           ? _value.level
           : level // ignore: cast_nullable_to_non_nullable
@@ -304,14 +281,6 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
           ? _value.sortOrder
           : sortOrder // ignore: cast_nullable_to_non_nullable
               as int,
-      metaTitle: null == metaTitle
-          ? _value.metaTitle
-          : metaTitle // ignore: cast_nullable_to_non_nullable
-              as String,
-      metaDescription: null == metaDescription
-          ? _value.metaDescription
-          : metaDescription // ignore: cast_nullable_to_non_nullable
-              as String,
       isActive: null == isActive
           ? _value.isActive
           : isActive // ignore: cast_nullable_to_non_nullable
@@ -319,6 +288,10 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
       isFeatured: null == isFeatured
           ? _value.isFeatured
           : isFeatured // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isDeleted: null == isDeleted
+          ? _value.isDeleted
+          : isDeleted // ignore: cast_nullable_to_non_nullable
               as bool,
       productCount: null == productCount
           ? _value.productCount
@@ -332,10 +305,6 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      isDeleted: null == isDeleted
-          ? _value.isDeleted
-          : isDeleted // ignore: cast_nullable_to_non_nullable
-              as bool,
     ));
   }
 }
@@ -352,19 +321,15 @@ class _$CategoryModelImpl extends _CategoryModel {
       this.iconUrl,
       this.bannerUrl,
       this.parentCategoryId,
-      final List<String> ancestorIds = const <String>[],
       this.level = 0,
       this.sortOrder = 0,
-      this.metaTitle = '',
-      this.metaDescription = '',
       this.isActive = true,
       this.isFeatured = false,
+      this.isDeleted = false,
       this.productCount = 0,
       @TimestampConverter() this.createdAt,
-      @TimestampConverter() this.updatedAt,
-      this.isDeleted = false})
-      : _ancestorIds = ancestorIds,
-        super._();
+      @TimestampConverter() this.updatedAt})
+      : super._();
 
   factory _$CategoryModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$CategoryModelImplFromJson(json);
@@ -383,57 +348,44 @@ class _$CategoryModelImpl extends _CategoryModel {
   final String? iconUrl;
   @override
   final String? bannerUrl;
-// Hierarchy
+
+  /// 🔑 HIERARCHY
   @override
   final String? parentCategoryId;
-  final List<String> _ancestorIds;
-  @override
-  @JsonKey()
-  List<String> get ancestorIds {
-    if (_ancestorIds is EqualUnmodifiableListView) return _ancestorIds;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_ancestorIds);
-  }
-
   @override
   @JsonKey()
   final int level;
   @override
   @JsonKey()
   final int sortOrder;
-// SEO
-  @override
-  @JsonKey()
-  final String metaTitle;
-  @override
-  @JsonKey()
-  final String metaDescription;
-// Status
+
+  /// STATUS
   @override
   @JsonKey()
   final bool isActive;
   @override
   @JsonKey()
   final bool isFeatured;
-// Stats
+  @override
+  @JsonKey()
+  final bool isDeleted;
+
+  /// STATS
   @override
   @JsonKey()
   final int productCount;
-// Timestamps
+
+  /// TIMESTAMPS
   @override
   @TimestampConverter()
   final DateTime? createdAt;
   @override
   @TimestampConverter()
   final DateTime? updatedAt;
-// Metadata
-  @override
-  @JsonKey()
-  final bool isDeleted;
 
   @override
   String toString() {
-    return 'CategoryModel(id: $id, name: $name, slug: $slug, description: $description, imageUrl: $imageUrl, iconUrl: $iconUrl, bannerUrl: $bannerUrl, parentCategoryId: $parentCategoryId, ancestorIds: $ancestorIds, level: $level, sortOrder: $sortOrder, metaTitle: $metaTitle, metaDescription: $metaDescription, isActive: $isActive, isFeatured: $isFeatured, productCount: $productCount, createdAt: $createdAt, updatedAt: $updatedAt, isDeleted: $isDeleted)';
+    return 'CategoryModel(id: $id, name: $name, slug: $slug, description: $description, imageUrl: $imageUrl, iconUrl: $iconUrl, bannerUrl: $bannerUrl, parentCategoryId: $parentCategoryId, level: $level, sortOrder: $sortOrder, isActive: $isActive, isFeatured: $isFeatured, isDeleted: $isDeleted, productCount: $productCount, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -453,53 +405,43 @@ class _$CategoryModelImpl extends _CategoryModel {
                 other.bannerUrl == bannerUrl) &&
             (identical(other.parentCategoryId, parentCategoryId) ||
                 other.parentCategoryId == parentCategoryId) &&
-            const DeepCollectionEquality()
-                .equals(other._ancestorIds, _ancestorIds) &&
             (identical(other.level, level) || other.level == level) &&
             (identical(other.sortOrder, sortOrder) ||
                 other.sortOrder == sortOrder) &&
-            (identical(other.metaTitle, metaTitle) ||
-                other.metaTitle == metaTitle) &&
-            (identical(other.metaDescription, metaDescription) ||
-                other.metaDescription == metaDescription) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
             (identical(other.isFeatured, isFeatured) ||
                 other.isFeatured == isFeatured) &&
+            (identical(other.isDeleted, isDeleted) ||
+                other.isDeleted == isDeleted) &&
             (identical(other.productCount, productCount) ||
                 other.productCount == productCount) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt) &&
-            (identical(other.isDeleted, isDeleted) ||
-                other.isDeleted == isDeleted));
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hashAll([
-        runtimeType,
-        id,
-        name,
-        slug,
-        description,
-        imageUrl,
-        iconUrl,
-        bannerUrl,
-        parentCategoryId,
-        const DeepCollectionEquality().hash(_ancestorIds),
-        level,
-        sortOrder,
-        metaTitle,
-        metaDescription,
-        isActive,
-        isFeatured,
-        productCount,
-        createdAt,
-        updatedAt,
-        isDeleted
-      ]);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      slug,
+      description,
+      imageUrl,
+      iconUrl,
+      bannerUrl,
+      parentCategoryId,
+      level,
+      sortOrder,
+      isActive,
+      isFeatured,
+      isDeleted,
+      productCount,
+      createdAt,
+      updatedAt);
 
   /// Create a copy of CategoryModel
   /// with the given fields replaced by the non-null parameter values.
@@ -527,17 +469,14 @@ abstract class _CategoryModel extends CategoryModel {
       final String? iconUrl,
       final String? bannerUrl,
       final String? parentCategoryId,
-      final List<String> ancestorIds,
       final int level,
       final int sortOrder,
-      final String metaTitle,
-      final String metaDescription,
       final bool isActive,
       final bool isFeatured,
+      final bool isDeleted,
       final int productCount,
       @TimestampConverter() final DateTime? createdAt,
-      @TimestampConverter() final DateTime? updatedAt,
-      final bool isDeleted}) = _$CategoryModelImpl;
+      @TimestampConverter() final DateTime? updatedAt}) = _$CategoryModelImpl;
   const _CategoryModel._() : super._();
 
   factory _CategoryModel.fromJson(Map<String, dynamic> json) =
@@ -556,33 +495,35 @@ abstract class _CategoryModel extends CategoryModel {
   @override
   String? get iconUrl;
   @override
-  String? get bannerUrl; // Hierarchy
+  String? get bannerUrl;
+
+  /// 🔑 HIERARCHY
   @override
   String? get parentCategoryId;
   @override
-  List<String> get ancestorIds;
-  @override
   int get level;
   @override
-  int get sortOrder; // SEO
-  @override
-  String get metaTitle;
-  @override
-  String get metaDescription; // Status
+  int get sortOrder;
+
+  /// STATUS
   @override
   bool get isActive;
   @override
-  bool get isFeatured; // Stats
+  bool get isFeatured;
   @override
-  int get productCount; // Timestamps
+  bool get isDeleted;
+
+  /// STATS
+  @override
+  int get productCount;
+
+  /// TIMESTAMPS
   @override
   @TimestampConverter()
   DateTime? get createdAt;
   @override
   @TimestampConverter()
-  DateTime? get updatedAt; // Metadata
-  @override
-  bool get isDeleted;
+  DateTime? get updatedAt;
 
   /// Create a copy of CategoryModel
   /// with the given fields replaced by the non-null parameter values.

@@ -32,32 +32,26 @@ class CategoryModel with _$CategoryModel {
     required String slug,
     required String description,
     required String imageUrl,
+
     String? iconUrl,
     String? bannerUrl,
 
-    // Hierarchy
+    /// 🔑 HIERARCHY
     String? parentCategoryId,
-    @Default(<String>[]) List<String> ancestorIds,
     @Default(0) int level,
     @Default(0) int sortOrder,
 
-    // SEO
-    @Default('') String metaTitle,
-    @Default('') String metaDescription,
-
-    // Status
+    /// STATUS
     @Default(true) bool isActive,
     @Default(false) bool isFeatured,
+    @Default(false) bool isDeleted,
 
-    // Stats
+    /// STATS
     @Default(0) int productCount,
 
-    // Timestamps
+    /// TIMESTAMPS
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
-
-    // Metadata
-    @Default(false) bool isDeleted,
   }) = _CategoryModel;
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) =>
@@ -68,21 +62,18 @@ class CategoryModel with _$CategoryModel {
   ) {
     final data = doc.data();
     if (data == null) throw Exception('Category document is null');
-
     return CategoryModel.fromJson({...data, 'id': doc.id});
   }
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();
     json.remove('id');
-
     json['createdAt'] ??= FieldValue.serverTimestamp();
     json['updatedAt'] ??= FieldValue.serverTimestamp();
-
     return json;
   }
 
-  bool get isRootCategory => parentCategoryId == null;
-  bool get hasProducts => productCount > 0;
+  /// HELPERS
+  bool get isRoot => parentCategoryId == null && level == 0;
   bool get isAvailable => isActive && !isDeleted;
 }
