@@ -6,8 +6,7 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 import 'cart_icon.dart';
 import 'wishlist_icon.dart';
 
-class HomeAppBar extends ConsumerWidget
-    implements PreferredSizeWidget {
+class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const HomeAppBar({super.key});
 
   @override
@@ -46,6 +45,5 @@ class HomeAppBar extends ConsumerWidget
   }
 
   @override
-  Size get preferredSize =>
-      const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

@@ -1,5 +1,3 @@
-// lib/core/router/app_router.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,6 +28,8 @@ import '../../features/address/presentation/screens/add_edit_address_screen.dart
 
 import '../../features/wishlist/presentation/screens/wishlist_screen.dart';
 
+import '../widgets/app_bottom_nav_bar.dart';
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
@@ -38,34 +38,35 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
 
     // =====================================================
-    // AUTH + GUEST REDIRECT LOGIC (FINAL)
+    // AUTH + GUEST REDIRECT (FINAL & CORRECT)
     // =====================================================
     redirect: (context, state) {
       final isLoggedIn = authState.value != null;
 
-      // Auth-only screens
-      final isAuthRoute =
-          state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup' ||
-          state.matchedLocation == '/forgot-password';
+      final authRoutes = [
+        '/login',
+        '/signup',
+        '/forgot-password',
+      ];
 
-      // Routes that guests ARE ALLOWED to access
-      const guestAllowedRoutes = [
+      final guestAllowedPrefixes = [
         '/',
         '/category',
         '/products',
         '/search',
       ];
 
-      final isGuestAllowed = guestAllowedRoutes
-          .any((path) => state.matchedLocation.startsWith(path));
+      final isAuthRoute = authRoutes.contains(state.matchedLocation);
 
-      // 🚫 Guest trying to access protected route
+      final isGuestAllowed =
+          guestAllowedPrefixes.any((p) => state.matchedLocation.startsWith(p));
+
+      // 🚫 Guest accessing protected route
       if (!isLoggedIn && !isAuthRoute && !isGuestAllowed) {
         return '/login';
       }
 
-      // 🚫 Logged-in user trying to access auth screens
+      // 🚫 Logged-in user accessing auth pages
       if (isLoggedIn && isAuthRoute) {
         return '/';
       }
@@ -78,179 +79,141 @@ final routerProvider = Provider<GoRouter>((ref) {
     // =====================================================
     routes: [
       // =============================
-      // HOME (PUBLIC)
-      // =============================
-      GoRoute(
-        path: '/',
-        name: 'home',
-        builder: (context, state) => const HomeScreen(),
-      ),
-
-      // =============================
-      // AUTH
+      // AUTH (NO BOTTOM NAV)
       // =============================
       GoRoute(
         path: '/login',
-        name: 'login',
         builder: (context, state) => const LoginScreen(),
       ),
-
       GoRoute(
         path: '/signup',
-        name: 'signup',
         builder: (context, state) => const SignupScreen(),
       ),
-
       GoRoute(
         path: '/forgot-password',
-        name: 'forgotPassword',
-        builder: (context, state) =>
-            const ForgotPasswordScreen(),
+        builder: (context, state) => const ForgotPasswordScreen(),
       ),
 
       // =============================
-      // CATEGORY LANDING (PUBLIC)
+      // MAIN APP (WITH BOTTOM NAV)
       // =============================
-      GoRoute(
-        path: '/category',
-        name: 'categoryLanding',
-        builder: (context, state) {
-          final category = state.extra as CategoryModel;
-          return CategoryLandingScreen(
-            rootCategory: category,
+      ShellRoute(
+        builder: (context, state, child) {
+          return Scaffold(
+            body: child,
+            bottomNavigationBar: const AppBottomNavBar(),
           );
         },
-      ),
+        routes: [
+          // -------- HOME
+          GoRoute(
+            path: '/',
+            builder: (context, state) => const HomeScreen(),
+          ),
 
-      // =============================
-      // PRODUCTS (PUBLIC)
-      // =============================
-      GoRoute(
-        path: '/products',
-        name: 'products',
-        builder: (context, state) {
-          final extra =
-              state.extra as Map<String, dynamic>?;
+          // -------- SEARCH
+          GoRoute(
+            path: '/search',
+            builder: (context, state) => const SearchScreen(),
+          ),
 
-          return ProductsListScreen(
-            categoryId: extra?['categoryId'],
-            title: extra?['title'],
-          );
-        },
-      ),
+          // -------- CATEGORY LANDING
+          GoRoute(
+            path: '/category',
+            builder: (context, state) {
+              final category = state.extra as CategoryModel;
+              return CategoryLandingScreen(
+                rootCategory: category,
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/products/:id',
-        name: 'productDetail',
-        builder: (context, state) {
-          final productId =
-              state.pathParameters['id']!;
-          return ProductDetailScreen(
-            productId: productId,
-          );
-        },
-      ),
+          // -------- PRODUCTS
+          GoRoute(
+            path: '/products',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
 
-      // =============================
-      // SEARCH (PUBLIC)
-      // =============================
-      GoRoute(
-        path: '/search',
-        name: 'search',
-        builder: (context, state) =>
-            const SearchScreen(),
-      ),
+              return ProductsListScreen(
+                categoryId: extra?['categoryId'],
+                title: extra?['title'],
+              );
+            },
+          ),
 
-      // =============================
-      // CART (AUTH REQUIRED)
-      // =============================
-      GoRoute(
-        path: '/cart',
-        name: 'cart',
-        builder: (context, state) =>
-            const CartScreen(),
-      ),
+          GoRoute(
+            path: '/products/:id',
+            builder: (context, state) {
+              final productId = state.pathParameters['id']!;
+              return ProductDetailScreen(
+                productId: productId,
+              );
+            },
+          ),
 
-      // =============================
-      // CHECKOUT (AUTH REQUIRED)
-      // =============================
-      GoRoute(
-        path: '/checkout',
-        name: 'checkout',
-        builder: (context, state) =>
-            const CheckoutScreen(),
-      ),
+          // -------- WISHLIST (AUTH)
+          GoRoute(
+            path: '/wishlist',
+            builder: (context, state) => const WishlistScreen(),
+          ),
 
-      // =============================
-      // ORDERS (AUTH REQUIRED)
-      // =============================
-      GoRoute(
-        path: '/orders',
-        name: 'orders',
-        builder: (context, state) =>
-            const OrdersListScreen(),
-      ),
+          // -------- CART (AUTH)
+          GoRoute(
+            path: '/cart',
+            builder: (context, state) => const CartScreen(),
+          ),
 
-      GoRoute(
-        path: '/orders/:id',
-        name: 'orderDetail',
-        builder: (context, state) {
-          final orderId =
-              state.pathParameters['id']!;
-          return OrderDetailScreen(
-            orderId: orderId,
-          );
-        },
-      ),
+          // -------- CHECKOUT (AUTH)
+          GoRoute(
+            path: '/checkout',
+            builder: (context, state) => const CheckoutScreen(),
+          ),
 
-      GoRoute(
-        path: '/orders/:id/success',
-        name: 'orderSuccess',
-        builder: (context, state) {
-          final orderId =
-              state.pathParameters['id']!;
-          return OrderSuccessScreen(
-            orderId: orderId,
-          );
-        },
-      ),
+          // -------- ORDERS / PROFILE
+          GoRoute(
+            path: '/orders',
+            builder: (context, state) => const OrdersListScreen(),
+          ),
 
-      // =============================
-      // ADDRESSES (AUTH REQUIRED)
-      // =============================
-      GoRoute(
-        path: '/addresses',
-        name: 'addresses',
-        builder: (context, state) =>
-            const AddressesListScreen(),
-      ),
+          GoRoute(
+            path: '/orders/:id',
+            builder: (context, state) {
+              final orderId = state.pathParameters['id']!;
+              return OrderDetailScreen(
+                orderId: orderId,
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/addresses/add',
-        name: 'addAddress',
-        builder: (context, state) =>
-            const AddEditAddressScreen(),
-      ),
+          GoRoute(
+            path: '/orders/:id/success',
+            builder: (context, state) {
+              final orderId = state.pathParameters['id']!;
+              return OrderSuccessScreen(
+                orderId: orderId,
+              );
+            },
+          ),
 
-      GoRoute(
-        path: '/addresses/edit/:id',
-        name: 'editAddress',
-        builder: (context, state) {
-          final address = state.extra;
-          return AddEditAddressScreen(
-            address: address as dynamic,
-          );
-        },
-      ),
-
-      // =============================
-      // WISHLIST (AUTH REQUIRED)
-      // =============================
-      GoRoute(
-        path: '/wishlist',
-        name: 'wishlist',
-        builder: (context, state) =>
-            const WishlistScreen(),
+          // -------- ADDRESSES
+          GoRoute(
+            path: '/addresses',
+            builder: (context, state) => const AddressesListScreen(),
+          ),
+          GoRoute(
+            path: '/addresses/add',
+            builder: (context, state) => const AddEditAddressScreen(),
+          ),
+          GoRoute(
+            path: '/addresses/edit/:id',
+            builder: (context, state) {
+              final address = state.extra;
+              return AddEditAddressScreen(
+                address: address as dynamic,
+              );
+            },
+          ),
+        ],
       ),
     ],
 

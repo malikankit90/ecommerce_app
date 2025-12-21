@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../categories/data/models/category_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TopCategoriesRow extends StatelessWidget {
+import '../../../categories/data/models/category_model.dart';
+import '../providers/home_ui_state_provider.dart';
+
+class TopCategoriesRow extends ConsumerWidget {
   final List<CategoryModel> categories;
 
   const TopCategoriesRow({
@@ -11,30 +13,40 @@ class TopCategoriesRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox.shrink();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedId = ref.watch(selectedRootCategoryIdProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: categories.take(4).map((category) {
-          return InkWell(
-            borderRadius: BorderRadius.circular(40),
+    return SizedBox(
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (_, index) {
+          final category = categories[index];
+          final isSelected = category.id == selectedId;
+
+          return GestureDetector(
             onTap: () {
-              // ✅ ROOT CATEGORY → CATEGORY LANDING
-              context.push(
-                '/category',
-                extra: category,
+              final notifier = ref.read(
+                selectedRootCategoryIdProvider.notifier,
               );
+
+              // 🔥 Toggle logic
+              notifier.state = isSelected ? null : category.id;
             },
             child: Column(
               children: [
                 CircleAvatar(
-                  radius: 28,
+                  radius: 32,
+                  backgroundColor: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Colors.grey.shade200,
                   child: Text(
                     category.name.characters.first,
-                    style: const TextStyle(
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -42,14 +54,16 @@ class TopCategoriesRow extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   category.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
               ],
             ),
           );
-        }).toList(),
+        },
       ),
     );
   }

@@ -6,22 +6,19 @@ import '../../data/models/home_state.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
 
-final homeControllerProvider =
-    AsyncNotifierProvider<HomeController, HomeState>(
+final homeControllerProvider = AsyncNotifierProvider<HomeController, HomeState>(
   HomeController.new,
 );
 
 class HomeController extends AsyncNotifier<HomeState> {
   @override
   Future<HomeState> build() async {
-    final trending =
-        await ref.watch(featuredProductsProvider.future);
+    final trending = await ref.watch(featuredProductsProvider.future);
 
-    final recommended =
-        await ref.watch(newArrivalsProvider.future);
+    final recommended = await ref.watch(newArrivalsProvider.future);
 
-    final categories =
-        await ref.watch(featuredCategoriesProvider.future);
+    // 🔥 FIX: LOAD ALL CATEGORIES (ROOT + SUB)
+    final categories = await ref.watch(categoriesStreamProvider.future);
 
     return HomeState(
       trending: trending,
@@ -35,7 +32,7 @@ class HomeController extends AsyncNotifier<HomeState> {
 
     ref.invalidate(featuredProductsProvider);
     ref.invalidate(newArrivalsProvider);
-    ref.invalidate(featuredCategoriesProvider);
+    ref.invalidate(categoriesStreamProvider);
 
     state = await AsyncValue.guard(build);
   }
