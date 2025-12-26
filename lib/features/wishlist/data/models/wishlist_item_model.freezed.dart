@@ -29,8 +29,9 @@ mixin _$WishlistItemModel {
   String get thumbnailUrl => throw _privateConstructorUsedError;
   double get price => throw _privateConstructorUsedError;
   double? get compareAtPrice => throw _privateConstructorUsedError;
+
+  /// Soft availability hint (NOT authoritative)
   bool get inStock => throw _privateConstructorUsedError;
-  int get availableStock => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime? get addedAt => throw _privateConstructorUsedError;
 
@@ -61,7 +62,6 @@ abstract class $WishlistItemModelCopyWith<$Res> {
       double price,
       double? compareAtPrice,
       bool inStock,
-      int availableStock,
       @TimestampConverter() DateTime? addedAt});
 }
 
@@ -90,7 +90,6 @@ class _$WishlistItemModelCopyWithImpl<$Res, $Val extends WishlistItemModel>
     Object? price = null,
     Object? compareAtPrice = freezed,
     Object? inStock = null,
-    Object? availableStock = null,
     Object? addedAt = freezed,
   }) {
     return _then(_value.copyWith(
@@ -134,10 +133,6 @@ class _$WishlistItemModelCopyWithImpl<$Res, $Val extends WishlistItemModel>
           ? _value.inStock
           : inStock // ignore: cast_nullable_to_non_nullable
               as bool,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
       addedAt: freezed == addedAt
           ? _value.addedAt
           : addedAt // ignore: cast_nullable_to_non_nullable
@@ -165,7 +160,6 @@ abstract class _$$WishlistItemModelImplCopyWith<$Res>
       double price,
       double? compareAtPrice,
       bool inStock,
-      int availableStock,
       @TimestampConverter() DateTime? addedAt});
 }
 
@@ -192,7 +186,6 @@ class __$$WishlistItemModelImplCopyWithImpl<$Res>
     Object? price = null,
     Object? compareAtPrice = freezed,
     Object? inStock = null,
-    Object? availableStock = null,
     Object? addedAt = freezed,
   }) {
     return _then(_$WishlistItemModelImpl(
@@ -236,10 +229,6 @@ class __$$WishlistItemModelImplCopyWithImpl<$Res>
           ? _value.inStock
           : inStock // ignore: cast_nullable_to_non_nullable
               as bool,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
       addedAt: freezed == addedAt
           ? _value.addedAt
           : addedAt // ignore: cast_nullable_to_non_nullable
@@ -262,7 +251,6 @@ class _$WishlistItemModelImpl extends _WishlistItemModel {
       required this.price,
       this.compareAtPrice,
       required this.inStock,
-      required this.availableStock,
       @TimestampConverter() this.addedAt})
       : super._();
 
@@ -287,17 +275,17 @@ class _$WishlistItemModelImpl extends _WishlistItemModel {
   final double price;
   @override
   final double? compareAtPrice;
+
+  /// Soft availability hint (NOT authoritative)
   @override
   final bool inStock;
-  @override
-  final int availableStock;
   @override
   @TimestampConverter()
   final DateTime? addedAt;
 
   @override
   String toString() {
-    return 'WishlistItemModel(id: $id, userId: $userId, productId: $productId, productName: $productName, productSlug: $productSlug, brandName: $brandName, thumbnailUrl: $thumbnailUrl, price: $price, compareAtPrice: $compareAtPrice, inStock: $inStock, availableStock: $availableStock, addedAt: $addedAt)';
+    return 'WishlistItemModel(id: $id, userId: $userId, productId: $productId, productName: $productName, productSlug: $productSlug, brandName: $brandName, thumbnailUrl: $thumbnailUrl, price: $price, compareAtPrice: $compareAtPrice, inStock: $inStock, addedAt: $addedAt)';
   }
 
   @override
@@ -321,8 +309,6 @@ class _$WishlistItemModelImpl extends _WishlistItemModel {
             (identical(other.compareAtPrice, compareAtPrice) ||
                 other.compareAtPrice == compareAtPrice) &&
             (identical(other.inStock, inStock) || other.inStock == inStock) &&
-            (identical(other.availableStock, availableStock) ||
-                other.availableStock == availableStock) &&
             (identical(other.addedAt, addedAt) || other.addedAt == addedAt));
   }
 
@@ -340,7 +326,6 @@ class _$WishlistItemModelImpl extends _WishlistItemModel {
       price,
       compareAtPrice,
       inStock,
-      availableStock,
       addedAt);
 
   /// Create a copy of WishlistItemModel
@@ -372,7 +357,6 @@ abstract class _WishlistItemModel extends WishlistItemModel {
       required final double price,
       final double? compareAtPrice,
       required final bool inStock,
-      required final int availableStock,
       @TimestampConverter() final DateTime? addedAt}) = _$WishlistItemModelImpl;
   const _WishlistItemModel._() : super._();
 
@@ -397,10 +381,10 @@ abstract class _WishlistItemModel extends WishlistItemModel {
   double get price;
   @override
   double? get compareAtPrice;
+
+  /// Soft availability hint (NOT authoritative)
   @override
   bool get inStock;
-  @override
-  int get availableStock;
   @override
   @TimestampConverter()
   DateTime? get addedAt;

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ecommerce_app/features/auth/presentation/providers/auth_providers.dart';
+
 import '../../data/models/cart_item_model.dart';
 import '../../data/repositories/cart_repository.dart';
 import '../../data/services/cart_firestore_service.dart';
@@ -23,11 +24,12 @@ final cartRepositoryProvider = Provider<CartRepository>((ref) {
 });
 
 /// =======================================================
-/// Cart Items Stream
+/// Cart Items Stream (USER-SCOPED)
+/// ❗ NO STOCK LOGIC HERE — CART IS STOCK-AGNOSTIC
 /// =======================================================
 
 final cartItemsStreamProvider =
-    StreamProvider<List<CartItemModel>>((ref) async* {
+    StreamProvider.autoDispose<List<CartItemModel>>((ref) async* {
   final authState = await ref.watch(authStateProvider.future);
 
   if (authState == null) {
@@ -44,7 +46,7 @@ final cartItemsStreamProvider =
 
 final cartItemCountProvider = Provider<int>((ref) {
   final cartItems = ref.watch(cartItemsStreamProvider);
-  
+
   return cartItems.when(
     data: (items) => items.length,
     loading: () => 0,
@@ -53,22 +55,22 @@ final cartItemCountProvider = Provider<int>((ref) {
 });
 
 /// =======================================================
-/// Cart Totals
+/// Cart Totals (PURE CALCULATION)
 /// =======================================================
 
 final cartTotalsProvider = Provider<Map<String, double>>((ref) {
   final cartItems = ref.watch(cartItemsStreamProvider);
-  
+
   return cartItems.when(
     data: (items) {
       double subtotal = 0.0;
       double savings = 0.0;
-      
-      for (var item in items) {
+
+      for (final item in items) {
         subtotal += item.subtotal;
         savings += item.savings;
       }
-      
+
       return {
         'subtotal': subtotal,
         'savings': savings,
@@ -112,20 +114,21 @@ class CartController extends StateNotifier<AsyncValue<void>> {
         super(const AsyncValue.data(null));
 
   /// ---------------------------------------------------
-  /// Get current user ID
+  /// Current user ID
   /// ---------------------------------------------------
-  String? get _userId {
-    final authState = _ref.read(authStateProvider).value;
-    return authState?.uid;
-  }
+  String? get _userId => _ref.read(authStateProvider).value?.uid;
 
   /// ---------------------------------------------------
   /// Add to cart
+  /// ❗ NO STOCK CHECKS HERE
   /// ---------------------------------------------------
   Future<void> addToCart(CartItemModel item) async {
     final userId = _userId;
     if (userId == null) {
-      state = AsyncValue.error('User not authenticated', StackTrace.current);
+      state = AsyncValue.error(
+        'User not authenticated',
+        StackTrace.current,
+      );
       return;
     }
 
@@ -136,15 +139,25 @@ class CartController extends StateNotifier<AsyncValue<void>> {
   }
 
   /// ---------------------------------------------------
-  /// Update quantity
+  /// Update quantity (BASIC INVARIANTS ONLY)
   /// ---------------------------------------------------
   Future<void> updateQuantity(String itemId, int quantity) async {
     final userId = _userId;
     if (userId == null) return;
 
+    // ❗ Cart-level invariant
+    if (quantity <= 0) {
+      await removeFromCart(itemId);
+      return;
+    }
+
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await _cartRepository.updateQuantity(userId, itemId, quantity);
+      await _cartRepository.updateQuantity(
+        userId,
+        itemId,
+        quantity,
+      );
     });
   }
 

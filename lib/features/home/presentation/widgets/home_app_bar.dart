@@ -37,8 +37,8 @@ class HomeAppBar extends ConsumerWidget implements PreferredSizeWidget {
 
         // ❤️🛒 Logged-in only
         if (isLoggedIn) ...[
-          WishlistIcon(),
-          CartIcon(),
+          const WishlistIcon(),
+          const CartIcon(),
         ],
       ],
     );

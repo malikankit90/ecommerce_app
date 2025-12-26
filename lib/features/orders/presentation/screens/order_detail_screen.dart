@@ -38,21 +38,7 @@ class OrderDetailScreen extends ConsumerWidget {
           ),
           error: (error, _) => Scaffold(
             appBar: AppBar(),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text('Failed to load order'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(orderByIdProvider(orderId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+            body: const Center(child: Text('Failed to load order')),
           ),
           data: (order) {
             if (order == null) {
@@ -70,42 +56,33 @@ class OrderDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Order Status Card
                     _buildStatusCard(order),
-
-                    // Order Items
                     _buildSectionHeader('Order Items'),
-                    ...order.items.map((item) => _buildOrderItem(context, item)).toList(),
-
-                    // Shipping Address
+                    ...order.items.map(
+                      (item) => _buildOrderItem(context, item),
+                    ),
                     _buildSectionHeader('Shipping Address'),
                     _buildAddressCard(order.shippingAddress),
-
-                    // Payment & Summary
                     _buildSectionHeader('Payment Summary'),
                     _buildPaymentSummary(order),
-
                     if (order.customerNote != null) ...[
                       _buildSectionHeader('Order Note'),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           order.customerNote!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                          ),
+                          style: TextStyle(color: Colors.grey[700]),
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 100),
                   ],
                 ),
               ),
-              bottomNavigationBar: order.canCancel
-                  ? _buildBottomBar(context, ref, order)
-                  : null,
+
+              // ✅ Cancel ONLY when rules allow it
+              bottomNavigationBar:
+                  order.canCancel ? _buildBottomBar(context, ref, order) : null,
             );
           },
         );
@@ -113,15 +90,16 @@ class OrderDetailScreen extends ConsumerWidget {
     );
   }
 
+  // =====================================================
+  // UI HELPERS
+  // =====================================================
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -132,196 +110,83 @@ class OrderDetailScreen extends ConsumerWidget {
       color: _getStatusColor(order.status).withOpacity(0.1),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(order.status).withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _getStatusIcon(order.status),
-                    color: _getStatusColor(order.status),
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.statusDisplay,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: _getStatusColor(order.status),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getStatusMessage(order.status),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            CircleAvatar(
+              backgroundColor: _getStatusColor(order.status).withOpacity(0.2),
+              child: Icon(
+                _getStatusIcon(order.status),
+                color: _getStatusColor(order.status),
+              ),
             ),
-            if (order.trackingNumber != null) ...[
-              const Divider(height: 24),
-              Row(
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.local_shipping, size: 20, color: Colors.grey[600]),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tracking Number',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          order.trackingNumber!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (order.carrier != null)
-                          Text(
-                            order.carrier!,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                      ],
+                  Text(
+                    order.statusDisplay,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: _getStatusColor(order.status),
                     ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getStatusMessage(order.status),
+                    style: TextStyle(color: Colors.grey[700]),
                   ),
                 ],
               ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
 
+  // =====================================================
+  // ORDER ITEMS
+  // =====================================================
+
   Widget _buildOrderItem(BuildContext context, item) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        leading: Container(
+        leading: Image.network(
+          item.thumbnailUrl,
           width: 60,
           height: 60,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: item.thumbnailUrl.isNotEmpty
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    item.thumbnailUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.image_not_supported);
-                    },
-                  ),
-                )
-              : const Icon(Icons.image_outlined),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
         ),
-        title: Text(
-          item.productName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              item.brandName,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            if (item.size != null || item.color != null)
-              Text(
-                '${item.color ?? ''} ${item.size ?? ''}'.trim(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            const SizedBox(height: 4),
-            Text(
-              'Qty: ${item.quantity} × \$${item.price.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
+        title: Text(item.productName,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          'Qty: ${item.quantity} × \$${item.price.toStringAsFixed(2)}',
         ),
         trailing: Text(
           '\$${(item.price * item.quantity).toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
+          style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
         ),
         onTap: () => context.push('/products/${item.productId}'),
       ),
     );
   }
 
-  Widget _buildAddressCard(shippingAddress) {
+  // =====================================================
+  // ADDRESS & PAYMENT
+  // =====================================================
+
+  Widget _buildAddressCard(address) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              shippingAddress.fullName,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              shippingAddress.phoneNumber,
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              shippingAddress.addressLine1,
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-            ),
-            if (shippingAddress.addressLine2 != null &&
-                shippingAddress.addressLine2!.isNotEmpty)
-              Text(
-                shippingAddress.addressLine2!,
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            Text(
-              '${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}',
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-            ),
-            Text(
-              shippingAddress.country,
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-            ),
-          ],
+        child: Text(
+          '${address.fullName}\n${address.addressLine1}\n${address.city}, ${address.state}',
         ),
       ),
     );
@@ -332,85 +197,51 @@ class OrderDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildSummaryRow('Payment Method', order.paymentMethod.toUpperCase()),
-          const SizedBox(height: 8),
-          _buildSummaryRow('Payment Status', _capitalizeFirst(order.paymentStatus)),
-          const Divider(height: 24),
-          _buildSummaryRow('Subtotal', '\$${order.subtotal.toStringAsFixed(2)}'),
-          if (order.discount > 0)
-            _buildSummaryRow('Discount', '-\$${order.discount.toStringAsFixed(2)}', isGreen: true),
-          _buildSummaryRow('Shipping', '\$${order.shippingCost.toStringAsFixed(2)}'),
-          _buildSummaryRow('Tax', '\$${order.tax.toStringAsFixed(2)}'),
-          const Divider(height: 24),
-          _buildSummaryRow(
+          _row('Payment Method', order.paymentMethod.toUpperCase()),
+          _row('Payment Status', _capitalizeFirst(order.paymentStatus)),
+          const Divider(),
+          _row('Subtotal', '\$${order.subtotal.toStringAsFixed(2)}'),
+          _row('Shipping', '\$${order.shippingCost.toStringAsFixed(2)}'),
+          _row('Tax', '\$${order.tax.toStringAsFixed(2)}'),
+          const Divider(),
+          _row(
             'Total',
             '\$${order.total.toStringAsFixed(2)}',
-            isBold: true,
-            isLarge: true,
+            bold: true,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    bool isLarge = false,
-    bool isGreen = false,
-  }) {
+  Widget _row(String l, String v, {bool bold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: isLarge ? 18 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isGreen ? Colors.green : null,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isLarge ? 18 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isGreen ? Colors.green : (isBold ? Colors.blue : null),
-          ),
-        ),
+        Text(l, style: TextStyle(fontWeight: bold ? FontWeight.bold : null)),
+        Text(v,
+            style: TextStyle(
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600)),
       ],
     );
   }
 
+  // =====================================================
+  // CANCEL
+  // =====================================================
+
   Widget _buildBottomBar(BuildContext context, WidgetRef ref, order) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, -3),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: OutlinedButton(
+          onPressed: () => _showCancelDialog(context, ref, order.id),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.red),
+            padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-        ],
-      ),
-      child: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () => _showCancelDialog(context, ref, order.id),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              side: const BorderSide(color: Colors.red),
-            ),
-            child: const Text(
-              'Cancel Order',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
+          child:
+              const Text('Cancel Order', style: TextStyle(color: Colors.red)),
         ),
       ),
     );
@@ -419,9 +250,9 @@ class OrderDetailScreen extends ConsumerWidget {
   void _showCancelDialog(BuildContext context, WidgetRef ref, String orderId) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Cancel Order'),
-        content: const Text('Are you sure you want to cancel this order?'),
+        content: const Text('You can cancel this order before it is shipped.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -430,23 +261,25 @@ class OrderDetailScreen extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await ref.read(orderControllerProvider.notifier).cancelOrder(orderId);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Order cancelled')),
-                );
-              }
+              await ref
+                  .read(orderControllerProvider.notifier)
+                  .cancelOrder(orderId);
             },
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+            child:
+                const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
   }
 
+  // =====================================================
+  // STATUS MAP (FIXED)
+  // =====================================================
+
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'pending':
+      case 'payment_pending':
         return Colors.orange;
       case 'confirmed':
         return Colors.blue;
@@ -465,7 +298,7 @@ class OrderDetailScreen extends ConsumerWidget {
 
   IconData _getStatusIcon(String status) {
     switch (status) {
-      case 'pending':
+      case 'payment_pending':
         return Icons.pending;
       case 'confirmed':
         return Icons.check_circle;
@@ -484,25 +317,23 @@ class OrderDetailScreen extends ConsumerWidget {
 
   String _getStatusMessage(String status) {
     switch (status) {
-      case 'pending':
-        return 'Your order is waiting for confirmation';
+      case 'payment_pending':
+        return 'Awaiting confirmation';
       case 'confirmed':
-        return 'Your order has been confirmed';
+        return 'Order confirmed';
       case 'processing':
-        return 'Your order is being prepared';
+        return 'Preparing order';
       case 'shipped':
-        return 'Your order is on the way';
+        return 'Order shipped';
       case 'delivered':
-        return 'Your order has been delivered';
+        return 'Order delivered';
       case 'cancelled':
-        return 'Your order has been cancelled';
+        return 'Order cancelled';
       default:
-        return 'Status unknown';
+        return 'Unknown status';
     }
   }
 
-  String _capitalizeFirst(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
-  }
+  String _capitalizeFirst(String text) =>
+      text.isEmpty ? text : text[0].toUpperCase() + text.substring(1);
 }

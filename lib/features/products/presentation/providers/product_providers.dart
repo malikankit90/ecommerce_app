@@ -29,14 +29,8 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 /// Products Stream (All Active Products)
 /// =======================================================
 
-final productsStreamProvider =
-    StreamProvider<List<ProductModel>>((ref) async* {
+final productsStreamProvider = StreamProvider<List<ProductModel>>((ref) async* {
   final authState = ref.watch(authStateProvider);
-
-  if (authState == null) {
-    yield [];
-    return;
-  }
 
   yield* ref.read(productRepositoryProvider).getProductsStream(
         status: 'active',
@@ -51,10 +45,6 @@ final featuredProductsProvider =
     FutureProvider<List<ProductModel>>((ref) async {
   final authState = ref.watch(authStateProvider);
 
-  if (authState == null) {
-    return [];
-  }
-
   return ref.read(productRepositoryProvider).getFeaturedProducts();
 });
 
@@ -65,10 +55,6 @@ final featuredProductsProvider =
 final newArrivalsProvider = FutureProvider<List<ProductModel>>((ref) async {
   final authState = ref.watch(authStateProvider);
 
-  if (authState == null) {
-    return [];
-  }
-
   return ref.read(productRepositoryProvider).getNewArrivals();
 });
 
@@ -76,19 +62,11 @@ final newArrivalsProvider = FutureProvider<List<ProductModel>>((ref) async {
 /// Product by ID (Stream)
 /// =======================================================
 
-final productByIdProvider =
-    StreamProvider.family<ProductModel?, String>(
+final productByIdProvider = StreamProvider.family<ProductModel?, String>(
   (ref, productId) async* {
     final authState = ref.watch(authStateProvider);
 
-    if (authState == null) {
-      yield null;
-      return;
-    }
-
-    yield* ref
-        .read(productRepositoryProvider)
-        .getProductStream(productId);
+    yield* ref.read(productRepositoryProvider).getProductStream(productId);
   },
 );
 
@@ -100,11 +78,6 @@ final productVariantsProvider =
     StreamProvider.family<List<ProductVariantModel>, String>(
   (ref, productId) async* {
     final authState = ref.watch(authStateProvider);
-
-    if (authState == null) {
-      yield [];
-      return;
-    }
 
     yield* ref
         .read(productRepositoryProvider)
@@ -125,16 +98,11 @@ final productsByCategoryProvider =
   (ref, categoryId) async {
     final authState = ref.watch(authStateProvider);
 
-    if (authState == null) {
-      return [];
-    }
-
     final repository = ref.read(productRepositoryProvider);
 
     // ✅ No category → get ALL active products (via existing stream API)
     if (categoryId == null || categoryId.isEmpty) {
-      final stream =
-          repository.getProductsStream(status: 'active');
+      final stream = repository.getProductsStream(status: 'active');
       return await stream.first;
     }
 
@@ -152,7 +120,7 @@ final searchProductsProvider =
   (ref, query) async {
     final authState = ref.watch(authStateProvider);
 
-    if (authState == null || query.trim().isEmpty) {
+    if (query.trim().isEmpty) {
       return [];
     }
 
@@ -198,7 +166,7 @@ class ProductController extends StateNotifier<AsyncValue<void>> {
 
   /// ---------------------------------------------------
   /// Update product (admin)
-   /// ---------------------------------------------------
+  /// ---------------------------------------------------
   Future<void> updateProduct(
     String productId,
     Map<String, dynamic> data,

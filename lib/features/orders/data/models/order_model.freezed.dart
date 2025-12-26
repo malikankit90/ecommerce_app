@@ -670,35 +670,49 @@ abstract class _ShippingAddressModel implements ShippingAddressModel {
 
 /// @nodoc
 mixin _$OrderModel {
+  /// 🔑 Firestore document ID (server-generated)
   String get id => throw _privateConstructorUsedError;
+
+  /// 🔑 Auth UID
   String get userId => throw _privateConstructorUsedError;
-  String get orderNumber => throw _privateConstructorUsedError; // Items
+
+  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+  String get idempotencyKey => throw _privateConstructorUsedError;
+
+  /// Human-readable order number
+  String get orderNumber =>
+      throw _privateConstructorUsedError; // ---------------- ITEMS ----------------
   List<OrderItemModel> get items => throw _privateConstructorUsedError;
-  int get totalItems => throw _privateConstructorUsedError; // Pricing
+  int get totalItems =>
+      throw _privateConstructorUsedError; // ---------------- PRICING ----------------
   double get subtotal => throw _privateConstructorUsedError;
   double get discount => throw _privateConstructorUsedError;
   double get shippingCost => throw _privateConstructorUsedError;
   double get tax => throw _privateConstructorUsedError;
-  double get total => throw _privateConstructorUsedError; // Shipping
+  double get total =>
+      throw _privateConstructorUsedError; // ---------------- SHIPPING ----------------
   ShippingAddressModel get shippingAddress =>
-      throw _privateConstructorUsedError; // Payment
+      throw _privateConstructorUsedError; // ---------------- PAYMENT ----------------
   String get paymentMethod => throw _privateConstructorUsedError;
+
+  /// pending | paid | failed | refunded
   String get paymentStatus =>
-      throw _privateConstructorUsedError; // pending, paid, failed, refunded
-// Status
+      throw _privateConstructorUsedError; // ---------------- ORDER STATE ----------------
+  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   String get status =>
-      throw _privateConstructorUsedError; // pending, confirmed, processing, shipped, delivered, cancelled
-// Tracking
+      throw _privateConstructorUsedError; // ---------------- TRACKING ----------------
   String? get trackingNumber => throw _privateConstructorUsedError;
   String? get carrier =>
-      throw _privateConstructorUsedError; // Timestamps (DOMAIN only – Firestore sets them)
+      throw _privateConstructorUsedError; // ---------------- TIMESTAMPS ----------------
   DateTime? get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
+  DateTime? get paidAt => throw _privateConstructorUsedError;
   DateTime? get confirmedAt => throw _privateConstructorUsedError;
   DateTime? get shippedAt => throw _privateConstructorUsedError;
   DateTime? get deliveredAt => throw _privateConstructorUsedError;
   DateTime? get cancelledAt => throw _privateConstructorUsedError;
-  int? get createdAtMillis => throw _privateConstructorUsedError; // Notes
+  int? get createdAtMillis =>
+      throw _privateConstructorUsedError; // ---------------- NOTES ----------------
   String? get customerNote => throw _privateConstructorUsedError;
   String? get adminNote => throw _privateConstructorUsedError;
   bool get isDeleted => throw _privateConstructorUsedError;
@@ -719,6 +733,7 @@ abstract class $OrderModelCopyWith<$Res> {
   $Res call(
       {String id,
       String userId,
+      String idempotencyKey,
       String orderNumber,
       List<OrderItemModel> items,
       int totalItems,
@@ -735,6 +750,7 @@ abstract class $OrderModelCopyWith<$Res> {
       String? carrier,
       DateTime? createdAt,
       DateTime? updatedAt,
+      DateTime? paidAt,
       DateTime? confirmedAt,
       DateTime? shippedAt,
       DateTime? deliveredAt,
@@ -764,6 +780,7 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
   $Res call({
     Object? id = null,
     Object? userId = null,
+    Object? idempotencyKey = null,
     Object? orderNumber = null,
     Object? items = null,
     Object? totalItems = null,
@@ -780,6 +797,7 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
     Object? carrier = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? paidAt = freezed,
     Object? confirmedAt = freezed,
     Object? shippedAt = freezed,
     Object? deliveredAt = freezed,
@@ -797,6 +815,10 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
       userId: null == userId
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
+              as String,
+      idempotencyKey: null == idempotencyKey
+          ? _value.idempotencyKey
+          : idempotencyKey // ignore: cast_nullable_to_non_nullable
               as String,
       orderNumber: null == orderNumber
           ? _value.orderNumber
@@ -862,6 +884,10 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      paidAt: freezed == paidAt
+          ? _value.paidAt
+          : paidAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       confirmedAt: freezed == confirmedAt
           ? _value.confirmedAt
           : confirmedAt // ignore: cast_nullable_to_non_nullable
@@ -919,6 +945,7 @@ abstract class _$$OrderModelImplCopyWith<$Res>
   $Res call(
       {String id,
       String userId,
+      String idempotencyKey,
       String orderNumber,
       List<OrderItemModel> items,
       int totalItems,
@@ -935,6 +962,7 @@ abstract class _$$OrderModelImplCopyWith<$Res>
       String? carrier,
       DateTime? createdAt,
       DateTime? updatedAt,
+      DateTime? paidAt,
       DateTime? confirmedAt,
       DateTime? shippedAt,
       DateTime? deliveredAt,
@@ -963,6 +991,7 @@ class __$$OrderModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? userId = null,
+    Object? idempotencyKey = null,
     Object? orderNumber = null,
     Object? items = null,
     Object? totalItems = null,
@@ -979,6 +1008,7 @@ class __$$OrderModelImplCopyWithImpl<$Res>
     Object? carrier = freezed,
     Object? createdAt = freezed,
     Object? updatedAt = freezed,
+    Object? paidAt = freezed,
     Object? confirmedAt = freezed,
     Object? shippedAt = freezed,
     Object? deliveredAt = freezed,
@@ -996,6 +1026,10 @@ class __$$OrderModelImplCopyWithImpl<$Res>
       userId: null == userId
           ? _value.userId
           : userId // ignore: cast_nullable_to_non_nullable
+              as String,
+      idempotencyKey: null == idempotencyKey
+          ? _value.idempotencyKey
+          : idempotencyKey // ignore: cast_nullable_to_non_nullable
               as String,
       orderNumber: null == orderNumber
           ? _value.orderNumber
@@ -1061,6 +1095,10 @@ class __$$OrderModelImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      paidAt: freezed == paidAt
+          ? _value.paidAt
+          : paidAt // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
       confirmedAt: freezed == confirmedAt
           ? _value.confirmedAt
           : confirmedAt // ignore: cast_nullable_to_non_nullable
@@ -1103,6 +1141,7 @@ class _$OrderModelImpl extends _OrderModel {
   const _$OrderModelImpl(
       {required this.id,
       required this.userId,
+      required this.idempotencyKey,
       required this.orderNumber,
       required final List<OrderItemModel> items,
       required this.totalItems,
@@ -1114,11 +1153,12 @@ class _$OrderModelImpl extends _OrderModel {
       required this.shippingAddress,
       required this.paymentMethod,
       this.paymentStatus = 'pending',
-      this.status = 'pending',
+      this.status = 'payment_pending',
       this.trackingNumber,
       this.carrier,
       this.createdAt,
       this.updatedAt,
+      this.paidAt,
       this.confirmedAt,
       this.shippedAt,
       this.deliveredAt,
@@ -1130,15 +1170,24 @@ class _$OrderModelImpl extends _OrderModel {
       : _items = items,
         super._();
 
+  /// 🔑 Firestore document ID (server-generated)
   @override
   final String id;
+
+  /// 🔑 Auth UID
   @override
   final String userId;
+
+  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+  @override
+  final String idempotencyKey;
+
+  /// Human-readable order number
   @override
   final String orderNumber;
-// Items
+// ---------------- ITEMS ----------------
   final List<OrderItemModel> _items;
-// Items
+// ---------------- ITEMS ----------------
   @override
   List<OrderItemModel> get items {
     if (_items is EqualUnmodifiableListView) return _items;
@@ -1148,7 +1197,7 @@ class _$OrderModelImpl extends _OrderModel {
 
   @override
   final int totalItems;
-// Pricing
+// ---------------- PRICING ----------------
   @override
   final double subtotal;
   @override
@@ -1159,31 +1208,34 @@ class _$OrderModelImpl extends _OrderModel {
   final double tax;
   @override
   final double total;
-// Shipping
+// ---------------- SHIPPING ----------------
   @override
   final ShippingAddressModel shippingAddress;
-// Payment
+// ---------------- PAYMENT ----------------
   @override
   final String paymentMethod;
+
+  /// pending | paid | failed | refunded
   @override
   @JsonKey()
   final String paymentStatus;
-// pending, paid, failed, refunded
-// Status
+// ---------------- ORDER STATE ----------------
+  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   @override
   @JsonKey()
   final String status;
-// pending, confirmed, processing, shipped, delivered, cancelled
-// Tracking
+// ---------------- TRACKING ----------------
   @override
   final String? trackingNumber;
   @override
   final String? carrier;
-// Timestamps (DOMAIN only – Firestore sets them)
+// ---------------- TIMESTAMPS ----------------
   @override
   final DateTime? createdAt;
   @override
   final DateTime? updatedAt;
+  @override
+  final DateTime? paidAt;
   @override
   final DateTime? confirmedAt;
   @override
@@ -1194,7 +1246,7 @@ class _$OrderModelImpl extends _OrderModel {
   final DateTime? cancelledAt;
   @override
   final int? createdAtMillis;
-// Notes
+// ---------------- NOTES ----------------
   @override
   final String? customerNote;
   @override
@@ -1205,7 +1257,7 @@ class _$OrderModelImpl extends _OrderModel {
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, userId: $userId, orderNumber: $orderNumber, items: $items, totalItems: $totalItems, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, tax: $tax, total: $total, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, status: $status, trackingNumber: $trackingNumber, carrier: $carrier, createdAt: $createdAt, updatedAt: $updatedAt, confirmedAt: $confirmedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt, cancelledAt: $cancelledAt, createdAtMillis: $createdAtMillis, customerNote: $customerNote, adminNote: $adminNote, isDeleted: $isDeleted)';
+    return 'OrderModel(id: $id, userId: $userId, idempotencyKey: $idempotencyKey, orderNumber: $orderNumber, items: $items, totalItems: $totalItems, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, tax: $tax, total: $total, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, status: $status, trackingNumber: $trackingNumber, carrier: $carrier, createdAt: $createdAt, updatedAt: $updatedAt, paidAt: $paidAt, confirmedAt: $confirmedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt, cancelledAt: $cancelledAt, createdAtMillis: $createdAtMillis, customerNote: $customerNote, adminNote: $adminNote, isDeleted: $isDeleted)';
   }
 
   @override
@@ -1215,6 +1267,8 @@ class _$OrderModelImpl extends _OrderModel {
             other is _$OrderModelImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.userId, userId) || other.userId == userId) &&
+            (identical(other.idempotencyKey, idempotencyKey) ||
+                other.idempotencyKey == idempotencyKey) &&
             (identical(other.orderNumber, orderNumber) ||
                 other.orderNumber == orderNumber) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
@@ -1242,6 +1296,7 @@ class _$OrderModelImpl extends _OrderModel {
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
+            (identical(other.paidAt, paidAt) || other.paidAt == paidAt) &&
             (identical(other.confirmedAt, confirmedAt) ||
                 other.confirmedAt == confirmedAt) &&
             (identical(other.shippedAt, shippedAt) ||
@@ -1265,6 +1320,7 @@ class _$OrderModelImpl extends _OrderModel {
         runtimeType,
         id,
         userId,
+        idempotencyKey,
         orderNumber,
         const DeepCollectionEquality().hash(_items),
         totalItems,
@@ -1281,6 +1337,7 @@ class _$OrderModelImpl extends _OrderModel {
         carrier,
         createdAt,
         updatedAt,
+        paidAt,
         confirmedAt,
         shippedAt,
         deliveredAt,
@@ -1304,6 +1361,7 @@ abstract class _OrderModel extends OrderModel {
   const factory _OrderModel(
       {required final String id,
       required final String userId,
+      required final String idempotencyKey,
       required final String orderNumber,
       required final List<OrderItemModel> items,
       required final int totalItems,
@@ -1320,6 +1378,7 @@ abstract class _OrderModel extends OrderModel {
       final String? carrier,
       final DateTime? createdAt,
       final DateTime? updatedAt,
+      final DateTime? paidAt,
       final DateTime? confirmedAt,
       final DateTime? shippedAt,
       final DateTime? deliveredAt,
@@ -1330,16 +1389,25 @@ abstract class _OrderModel extends OrderModel {
       final bool isDeleted}) = _$OrderModelImpl;
   const _OrderModel._() : super._();
 
+  /// 🔑 Firestore document ID (server-generated)
   @override
   String get id;
+
+  /// 🔑 Auth UID
   @override
   String get userId;
+
+  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
   @override
-  String get orderNumber; // Items
+  String get idempotencyKey;
+
+  /// Human-readable order number
+  @override
+  String get orderNumber; // ---------------- ITEMS ----------------
   @override
   List<OrderItemModel> get items;
   @override
-  int get totalItems; // Pricing
+  int get totalItems; // ---------------- PRICING ----------------
   @override
   double get subtotal;
   @override
@@ -1349,26 +1417,29 @@ abstract class _OrderModel extends OrderModel {
   @override
   double get tax;
   @override
-  double get total; // Shipping
+  double get total; // ---------------- SHIPPING ----------------
   @override
-  ShippingAddressModel get shippingAddress; // Payment
+  ShippingAddressModel
+      get shippingAddress; // ---------------- PAYMENT ----------------
   @override
   String get paymentMethod;
+
+  /// pending | paid | failed | refunded
   @override
-  String get paymentStatus; // pending, paid, failed, refunded
-// Status
+  String get paymentStatus; // ---------------- ORDER STATE ----------------
+  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   @override
-  String
-      get status; // pending, confirmed, processing, shipped, delivered, cancelled
-// Tracking
+  String get status; // ---------------- TRACKING ----------------
   @override
   String? get trackingNumber;
   @override
-  String? get carrier; // Timestamps (DOMAIN only – Firestore sets them)
+  String? get carrier; // ---------------- TIMESTAMPS ----------------
   @override
   DateTime? get createdAt;
   @override
   DateTime? get updatedAt;
+  @override
+  DateTime? get paidAt;
   @override
   DateTime? get confirmedAt;
   @override
@@ -1378,7 +1449,7 @@ abstract class _OrderModel extends OrderModel {
   @override
   DateTime? get cancelledAt;
   @override
-  int? get createdAtMillis; // Notes
+  int? get createdAtMillis; // ---------------- NOTES ----------------
   @override
   String? get customerNote;
   @override

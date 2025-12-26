@@ -9,7 +9,7 @@ class CartRepository {
   }) : _firestoreService = firestoreService;
 
   // =====================================================
-  // Cart Items - Read
+  // Cart Items - READ
   // =====================================================
 
   Stream<List<CartItemModel>> getCartItemsStream(String userId) {
@@ -28,7 +28,10 @@ class CartRepository {
     }
   }
 
-  Future<CartItemModel?> getCartItem(String userId, String itemId) async {
+  Future<CartItemModel?> getCartItem(
+    String userId,
+    String itemId,
+  ) async {
     try {
       return await _firestoreService.getCartItem(userId, itemId);
     } catch (e) {
@@ -45,10 +48,14 @@ class CartRepository {
   }
 
   // =====================================================
-  // Cart Items - Write
+  // Cart Items - WRITE
+  // ❗ CART IS STOCK-AGNOSTIC
   // =====================================================
 
-  Future<void> addToCart(String userId, CartItemModel item) async {
+  Future<void> addToCart(
+    String userId,
+    CartItemModel item,
+  ) async {
     try {
       await _firestoreService.addToCart(userId, item);
     } catch (e) {
@@ -56,18 +63,11 @@ class CartRepository {
     }
   }
 
-  Future<void> updateCartItem(
-    String userId,
-    String itemId,
-    Map<String, dynamic> data,
-  ) async {
-    try {
-      await _firestoreService.updateCartItem(userId, itemId, data);
-    } catch (e) {
-      throw Exception('Failed to update cart item: $e');
-    }
-  }
-
+  /// ---------------------------------------------------
+  /// Update quantity ONLY
+  /// ❌ No stock checks
+  /// ❌ No availability validation
+  /// ---------------------------------------------------
   Future<void> updateQuantity(
     String userId,
     String itemId,
@@ -76,15 +76,26 @@ class CartRepository {
     try {
       if (quantity <= 0) {
         await _firestoreService.removeFromCart(userId, itemId);
-      } else {
-        await _firestoreService.updateQuantity(userId, itemId, quantity);
+        return;
       }
+
+      await _firestoreService.updateQuantity(
+        userId,
+        itemId,
+        quantity,
+      );
     } catch (e) {
       throw Exception('Failed to update quantity: $e');
     }
   }
 
-  Future<void> removeFromCart(String userId, String itemId) async {
+  /// ---------------------------------------------------
+  /// Remove item
+  /// ---------------------------------------------------
+  Future<void> removeFromCart(
+    String userId,
+    String itemId,
+  ) async {
     try {
       await _firestoreService.removeFromCart(userId, itemId);
     } catch (e) {
@@ -92,6 +103,9 @@ class CartRepository {
     }
   }
 
+  /// ---------------------------------------------------
+  /// Clear entire cart
+  /// ---------------------------------------------------
   Future<void> clearCart(String userId) async {
     try {
       await _firestoreService.clearCart(userId);

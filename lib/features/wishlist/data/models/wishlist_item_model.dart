@@ -36,10 +36,9 @@ class WishlistItemModel with _$WishlistItemModel {
     required String thumbnailUrl,
     required double price,
     double? compareAtPrice,
-    
+
+    /// Soft availability hint (NOT authoritative)
     required bool inStock,
-    required int availableStock,
-    
     @TimestampConverter() DateTime? addedAt,
   }) = _WishlistItemModel;
 
@@ -50,16 +49,21 @@ class WishlistItemModel with _$WishlistItemModel {
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data();
-    if (data == null) throw Exception('Wishlist item document is null');
-    return WishlistItemModel.fromJson({...data, 'id': doc.id});
+    if (data == null) {
+      throw Exception('Wishlist item document is null');
+    }
+
+    return WishlistItemModel.fromJson({
+      ...data,
+      'id': doc.id,
+    });
   }
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();
     json.remove('id');
-    
+
     json['addedAt'] ??= FieldValue.serverTimestamp();
-    
     return json;
   }
 

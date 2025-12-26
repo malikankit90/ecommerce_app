@@ -22,8 +22,6 @@ _$CartItemModelImpl _$$CartItemModelImplFromJson(Map<String, dynamic> json) =>
       size: json['size'] as String?,
       color: json['color'] as String?,
       colorHex: json['colorHex'] as String?,
-      availableStock: (json['availableStock'] as num).toInt(),
-      inStock: json['inStock'] as bool,
       addedAt: const TimestampConverter().fromJson(json['addedAt']),
       updatedAt: const TimestampConverter().fromJson(json['updatedAt']),
     );
@@ -44,8 +42,6 @@ Map<String, dynamic> _$$CartItemModelImplToJson(_$CartItemModelImpl instance) =>
       'size': instance.size,
       'color': instance.color,
       'colorHex': instance.colorHex,
-      'availableStock': instance.availableStock,
-      'inStock': instance.inStock,
       'addedAt': const TimestampConverter().toJson(instance.addedAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
     };

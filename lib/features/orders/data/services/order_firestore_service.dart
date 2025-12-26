@@ -1,72 +1,106 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/order_model.dart';
 
 class OrderFirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   CollectionReference<Map<String, dynamic>> get _orders =>
       _firestore.collection('orders');
 
   // =====================================================
-  // CREATE
+  // CREATE — IDEMPOTENT (TRANSACTION SAFE)
+  // OrderModel.id == IDEMPOTENCY KEY
   // =====================================================
+  Future<String> createOrder(OrderModel order) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
 
-  Future<void> createOrder(OrderModel order) async {
-    final nowMillis = DateTime.now().millisecondsSinceEpoch;
+    final idempotencyKey = order.id;
 
-    await _orders.doc(order.id).set({
-      'userId': order.userId,
-      'orderNumber': order.orderNumber,
+    debugPrint('🟢 Firestore.createOrder (IDEMPOTENT)');
+    debugPrint('   ↳ userId=${user.uid}');
+    debugPrint('   ↳ idempotencyKey=$idempotencyKey');
+    debugPrint('   ↳ orderNumber=${order.orderNumber}');
 
-      // Items
-      'items': order.items.map((e) => e.toJson()).toList(),
-      'totalItems': order.totalItems,
+    return await _firestore.runTransaction<String>((transaction) async {
+      // -------------------------------------------------
+      // 1️⃣ Check for existing order with same idempotencyKey
+      // -------------------------------------------------
+      final querySnapshot = await _orders
+          .where('userId', isEqualTo: user.uid)
+          .where('idempotencyKey', isEqualTo: idempotencyKey)
+          .limit(1)
+          .get();
 
-      // Pricing
-      'subtotal': order.subtotal,
-      'discount': order.discount,
-      'shippingCost': order.shippingCost,
-      'tax': order.tax,
-      'total': order.total,
+      if (querySnapshot.docs.isNotEmpty) {
+        final existingDoc = querySnapshot.docs.first;
+        debugPrint(
+          '🟡 IDEMPOTENCY HIT → existing orderId=${existingDoc.id}',
+        );
+        return existingDoc.id;
+      }
 
-      // Shipping
-      'shippingAddress': order.shippingAddress.toJson(),
+      // -------------------------------------------------
+      // 2️⃣ Create new order (ONLY ONCE)
+      // -------------------------------------------------
+      final newDocRef = _orders.doc();
 
-      // Payment
-      'paymentMethod': order.paymentMethod,
-      'paymentStatus': order.paymentStatus,
+      transaction.set(newDocRef, {
+        // ---------------- CORE ----------------
+        'userId': user.uid,
+        'idempotencyKey': idempotencyKey,
+        'orderNumber': order.orderNumber,
 
-      // Status
-      'status': order.status,
+        // ---------------- ITEMS ----------------
+        'items': order.items.map((e) => e.toJson()).toList(),
+        'totalItems': order.totalItems,
 
-      // Tracking
-      'trackingNumber': order.trackingNumber,
-      'carrier': order.carrier,
+        // ---------------- PRICING ----------------
+        'subtotal': order.subtotal,
+        'discount': order.discount,
+        'shippingCost': order.shippingCost,
+        'tax': order.tax,
+        'total': order.total,
 
-      // Notes
-      'customerNote': order.customerNote,
-      'adminNote': order.adminNote,
+        // ---------------- SHIPPING ----------------
+        'shippingAddress': order.shippingAddress.toJson(),
 
-      'isDeleted': false,
+        // ---------------- PAYMENT ----------------
+        'paymentMethod': order.paymentMethod,
+        'paymentStatus': 'pending',
 
-      // 🔥 AUTHORITATIVE TIMESTAMPS
-      'createdAt': FieldValue.serverTimestamp(),
-      'createdAtMillis': nowMillis,
-      'updatedAt': FieldValue.serverTimestamp(),
+        // ---------------- ORDER STATE ----------------
+        'status': 'payment_pending',
+
+        // ---------------- META ----------------
+        'customerNote': order.customerNote ?? '',
+        'isDeleted': false,
+
+        // ---------------- TIMESTAMPS ----------------
+        'createdAt': FieldValue.serverTimestamp(),
+        'createdAtMillis': DateTime.now().millisecondsSinceEpoch,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint(
+        '✅ Firestore.createOrder SUCCESS → orderId=${newDocRef.id}',
+      );
+      return newDocRef.id;
     });
   }
 
   // =====================================================
   // READ
   // =====================================================
-
-  Future<OrderModel?> getOrderById(String orderId) async {
-    final doc = await _orders.doc(orderId).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return OrderModel.fromFirestore(doc);
-  }
-
   Stream<OrderModel?> getOrderStream(String orderId) {
+    debugPrint('🟢 Firestore.getOrderStream → $orderId');
+
     return _orders.doc(orderId).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) return null;
       return OrderModel.fromFirestore(doc);
@@ -74,70 +108,35 @@ class OrderFirestoreService {
   }
 
   Stream<List<OrderModel>> getUserOrdersStream(String userId) {
+    debugPrint('🟢 Firestore.getUserOrdersStream → userId=$userId');
+
     return _orders
         .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
         .orderBy('createdAtMillis', descending: true)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map(OrderModel.fromFirestore).toList(),
+          (snapshot) => snapshot.docs.map(OrderModel.fromFirestore).toList(),
         );
   }
 
-  Future<List<OrderModel>> getUserOrders(String userId) async {
-    final snapshot = await _orders
-        .where('userId', isEqualTo: userId)
-        .where('isDeleted', isEqualTo: false)
-        .orderBy('createdAtMillis', descending: true)
-        .get();
-
-    return snapshot.docs.map(OrderModel.fromFirestore).toList();
-  }
-
   // =====================================================
-  // UPDATE
+  // CANCEL (CLIENT-ALLOWED BEFORE SHIPPED)
   // =====================================================
+  Future<void> cancelOrder(String orderId) async {
+    debugPrint('🟡 Firestore.cancelOrder → $orderId');
 
-  Future<void> updateOrderStatus(String orderId, String status) async {
-    final updates = <String, dynamic>{
-      'status': status,
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (status == 'confirmed') {
-      updates['confirmedAt'] = FieldValue.serverTimestamp();
-    } else if (status == 'shipped') {
-      updates['shippedAt'] = FieldValue.serverTimestamp();
-    } else if (status == 'delivered') {
-      updates['deliveredAt'] = FieldValue.serverTimestamp();
-    } else if (status == 'cancelled') {
-      updates['cancelledAt'] = FieldValue.serverTimestamp();
-    }
-
-    await _orders.doc(orderId).update(updates);
-  }
-
-  Future<void> updateTrackingInfo(
-    String orderId,
-    String trackingNumber,
-    String carrier,
-  ) async {
     await _orders.doc(orderId).update({
-      'trackingNumber': trackingNumber,
-      'carrier': carrier,
+      'status': 'cancelled',
       'updatedAt': FieldValue.serverTimestamp(),
     });
-  }
 
-  Future<void> cancelOrder(String orderId) async {
-    await updateOrderStatus(orderId, 'cancelled');
+    debugPrint('✅ Firestore.cancelOrder SUCCESS → $orderId');
   }
 
   // =====================================================
   // UTIL
   // =====================================================
-
   Future<String> generateOrderNumber() async {
     final ts = DateTime.now().millisecondsSinceEpoch;
     return 'ORD-${ts.toString().substring(ts.toString().length - 10)}';

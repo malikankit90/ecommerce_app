@@ -31,14 +31,12 @@ class ProductDetailScreen extends ConsumerWidget {
         body: Center(child: Text('Auth error: $error')),
       ),
       data: (user) {
-        // 🚨 CRITICAL GUARD
         if (user == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // 🔒 ONLY load product data after auth is ready
         final productAsync = ref.watch(productByIdProvider(productId));
 
         return productAsync.when(
@@ -47,30 +45,13 @@ class ProductDetailScreen extends ConsumerWidget {
           ),
           error: (error, _) => Scaffold(
             appBar: AppBar(),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text('Failed to load product'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () =>
-                        ref.invalidate(productByIdProvider(productId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+            body: const Center(child: Text('Failed to load product')),
           ),
           data: (product) {
             if (product == null) {
               return Scaffold(
                 appBar: AppBar(),
-                body: const Center(
-                  child: Text('Product not found'),
-                ),
+                body: const Center(child: Text('Product not found')),
               );
             }
 
@@ -83,7 +64,7 @@ class ProductDetailScreen extends ConsumerWidget {
 }
 
 class _ProductDetailContent extends ConsumerWidget {
-  final product;
+  final dynamic product;
 
   const _ProductDetailContent({required this.product});
 
@@ -97,24 +78,16 @@ class _ProductDetailContent extends ConsumerWidget {
         actions: [
           Consumer(
             builder: (context, ref, _) {
-              final isInWishlist =
-                  ref.watch(isInWishlistProvider(product.id));
+              final isInWishlist = ref.watch(isInWishlistProvider(product.id));
 
               return IconButton(
                 icon: Icon(
-                  isInWishlist
-                      ? Icons.favorite
-                      : Icons.favorite_border,
+                  isInWishlist ? Icons.favorite : Icons.favorite_border,
                   color: isInWishlist ? Colors.red : null,
                 ),
-                onPressed: () =>
-                    _handleWishlistToggle(context, ref, product),
+                onPressed: () => _handleWishlistToggle(context, ref, product),
               );
             },
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {},
           ),
         ],
       ),
@@ -123,20 +96,12 @@ class _ProductDetailContent extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildImageGallery(product),
-
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.brandName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text(product.brandName),
                   const SizedBox(height: 4),
                   Text(
                     product.name,
@@ -146,170 +111,33 @@ class _ProductDetailContent extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  Row(
-                    children: [
-                      Text(
-                        product.displayPrice,
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      if (product.hasDiscount) ...[
-                        const SizedBox(width: 12),
-                        Text(
-                          product.originalPrice,
-                          style: TextStyle(
-                            fontSize: 18,
-                            decoration: TextDecoration.lineThrough,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${product.discountPercentage}% OFF',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  if (product.totalReviews > 0)
-                    Row(
-                      children: [
-                        const Icon(Icons.star,
-                            color: Colors.amber, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          product.averageRating.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '(${product.totalReviews} reviews)',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                  Text(
+                    product.displayPrice,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
                     ),
+                  ),
                   const SizedBox(height: 24),
-
                   variantsAsync.when(
                     loading: () => const CircularProgressIndicator(),
-                    error: (error, _) => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
                     data: (variants) {
                       if (variants.isEmpty) {
                         return const SizedBox.shrink();
                       }
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Available Options',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: variants.map((variant) {
-                              return _VariantChip(variant: variant);
-                            }).toList(),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
+                      return Wrap(
+                        spacing: 8,
+                        children: variants
+                            .map((v) => _VariantChip(variant: v))
+                            .toList(),
                       );
                     },
                   ),
-
-                  const Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    product.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-                  ),
                   const SizedBox(height: 24),
-
-                  if (product.material.isNotEmpty ||
-                      product.fit.isNotEmpty ||
-                      product.origin.isNotEmpty) ...[
-                    const Text(
-                      'Product Details',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (product.material.isNotEmpty)
-                      _DetailRow('Material', product.material),
-                    if (product.fit.isNotEmpty)
-                      _DetailRow('Fit', product.fit),
-                    if (product.origin.isNotEmpty)
-                      _DetailRow('Made in', product.origin),
-                    const SizedBox(height: 24),
-                  ],
-
-                  if (!product.inStock)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border:
-                            Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.red.shade700),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Out of Stock',
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  Text(product.description),
                 ],
               ),
             ),
@@ -320,21 +148,9 @@ class _ProductDetailContent extends ConsumerWidget {
           ? SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            _handleAddToCart(context, ref, product),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                        ),
-                        child: const Text('Add to Cart'),
-                      ),
-                    ),
-                  ],
+                child: ElevatedButton(
+                  onPressed: () => _handleAddToCart(context, ref, product),
+                  child: const Text('Add to Cart'),
                 ),
               ),
             )
@@ -361,27 +177,11 @@ class _ProductDetailContent extends ConsumerWidget {
       price: product.sellingPrice,
       compareAtPrice: product.compareAtPrice,
       inStock: product.inStock,
-      availableStock: product.availableStock,
     );
 
     await ref
         .read(wishlistControllerProvider.notifier)
         .toggleWishlist(product.id, wishlistItem);
-
-    final isInWishlist =
-        ref.read(isInWishlistProvider(product.id));
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isInWishlist
-                ? 'Added to wishlist'
-                : 'Removed from wishlist',
-          ),
-        ),
-      );
-    }
   }
 
   void _handleAddToCart(
@@ -393,8 +193,7 @@ class _ProductDetailContent extends ConsumerWidget {
     if (authState == null) return;
 
     final cartItem = CartItemModel(
-      id:
-          '${authState.uid}_${product.id}_${DateTime.now().millisecondsSinceEpoch}',
+      id: '${authState.uid}_${product.id}_${DateTime.now().millisecondsSinceEpoch}',
       userId: authState.uid,
       productId: product.id,
       productName: product.name,
@@ -404,18 +203,14 @@ class _ProductDetailContent extends ConsumerWidget {
       price: product.sellingPrice,
       compareAtPrice: product.compareAtPrice,
       quantity: 1,
-      availableStock: product.availableStock,
-      inStock: product.inStock,
     );
 
-    await ref
-        .read(cartControllerProvider.notifier)
-        .addToCart(cartItem);
+    await ref.read(cartControllerProvider.notifier).addToCart(cartItem);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Added to cart!'),
+          content: const Text('Added to cart'),
           action: SnackBarAction(
             label: 'View Cart',
             onPressed: () => context.push('/cart'),
@@ -427,77 +222,27 @@ class _ProductDetailContent extends ConsumerWidget {
 
   Widget _buildImageGallery(product) {
     if (product.images.isEmpty) {
-      return Container(
-        height: 400,
-        width: double.infinity,
-        color: Colors.grey[200],
-        child: const Icon(Icons.image_outlined,
-            size: 64, color: Colors.grey),
+      return const SizedBox(
+        height: 300,
+        child: Center(child: Icon(Icons.image)),
       );
     }
 
     return SizedBox(
-      height: 400,
-      child: PageView.builder(
-        itemCount: product.images.length,
-        itemBuilder: (context, index) {
-          final image = product.images[index];
-          return Image.network(
-            image.url,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey[200],
-                child: const Icon(Icons.image_not_supported,
-                    size: 64),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow(this.label, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      height: 300,
+      child: PageView(
+        children: product.images
+            .map<Widget>(
+              (img) => Image.network(img.url, fit: BoxFit.cover),
+            )
+            .toList(),
       ),
     );
   }
 }
 
 class _VariantChip extends StatelessWidget {
-  final variant;
+  final dynamic variant;
 
   const _VariantChip({required this.variant});
 
@@ -505,14 +250,8 @@ class _VariantChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Chip(
       label: Text(variant.displayName),
-      backgroundColor: variant.inStock
-          ? Colors.blue.shade50
-          : Colors.grey.shade200,
-      side: BorderSide(
-        color: variant.inStock
-            ? Colors.blue.shade200
-            : Colors.grey.shade400,
-      ),
+      backgroundColor:
+          variant.inStock ? Colors.blue.shade50 : Colors.grey.shade200,
     );
   }
 }

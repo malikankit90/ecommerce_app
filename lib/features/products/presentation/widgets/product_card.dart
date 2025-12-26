@@ -10,9 +10,9 @@ import '../../../cart/data/models/cart_item_model.dart';
 import '../../../wishlist/data/models/wishlist_item_model.dart';
 
 enum ProductCardVariant {
-  compact,   // Home (horizontal)
-  catalog,   // Product list
-  detailed,  // Recommendations
+  compact,
+  catalog,
+  detailed,
 }
 
 class ProductCard extends ConsumerWidget {
@@ -40,14 +40,12 @@ class ProductCard extends ConsumerWidget {
     switch (variant) {
       case ProductCardVariant.compact:
         return 120;
-      case ProductCardVariant.catalog:
-      case ProductCardVariant.detailed:
+      default:
         return 150;
     }
   }
 
-  int get _titleMaxLines =>
-      variant == ProductCardVariant.compact ? 2 : 3;
+  int get _titleMaxLines => variant == ProductCardVariant.compact ? 2 : 3;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -63,13 +61,7 @@ class ProductCard extends ConsumerWidget {
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              /// IMAGE
-              _ImageSection(
-                product: product,
-                height: _imageHeight,
-              ),
-
-              /// CONTENT (CLAMPED)
+              _ImageSection(product: product, height: _imageHeight),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
@@ -78,7 +70,6 @@ class ProductCard extends ConsumerWidget {
                     children: [
                       _Badges(product: product),
                       const SizedBox(height: 4),
-
                       Text(
                         product.brandName,
                         maxLines: 1,
@@ -88,9 +79,7 @@ class ProductCard extends ConsumerWidget {
                           color: Colors.grey,
                         ),
                       ),
-
                       const SizedBox(height: 2),
-
                       Text(
                         product.name,
                         maxLines: _titleMaxLines,
@@ -100,16 +89,12 @@ class ProductCard extends ConsumerWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-
                       const Spacer(),
-
                       _PriceRow(product: product),
                     ],
                   ),
                 ),
               ),
-
-              /// ACTIONS (PINNED — NEVER OVERFLOWS)
               _ActionsRow(
                 product: product,
                 userId: user?.uid,
@@ -142,15 +127,11 @@ class _ImageSection extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           product.thumbnailUrl.isNotEmpty
-              ? Image.network(
-                  product.thumbnailUrl,
-                  fit: BoxFit.cover,
-                )
+              ? Image.network(product.thumbnailUrl, fit: BoxFit.cover)
               : Container(
                   color: Colors.grey.shade200,
                   child: const Icon(Icons.image_not_supported),
                 ),
-
           if (!product.inStock)
             Container(
               color: Colors.black54,
@@ -185,10 +166,8 @@ class _Badges extends StatelessWidget {
     return Wrap(
       spacing: 4,
       children: [
-        if (product.isTrending)
-          _Badge('TRENDING', Colors.deepOrange),
-        if (product.isNewArrival)
-          _Badge('NEW', Colors.green),
+        if (product.isTrending) const _Badge('TRENDING', Colors.deepOrange),
+        if (product.isNewArrival) const _Badge('NEW', Colors.green),
       ],
     );
   }
@@ -277,11 +256,9 @@ class _ActionsRow extends ConsumerWidget {
               onPressed: (userId == null || !product.inStock)
                   ? null
                   : () {
-                      ref
-                          .read(cartControllerProvider.notifier)
-                          .addToCart(
+                      ref.read(cartControllerProvider.notifier).addToCart(
                             CartItemModel(
-                              id: product.id,
+                              id: '${userId!}_${product.id}_${DateTime.now().millisecondsSinceEpoch}',
                               userId: userId!,
                               productId: product.id,
                               productName: product.name,
@@ -291,16 +268,10 @@ class _ActionsRow extends ConsumerWidget {
                               price: product.sellingPrice,
                               compareAtPrice: product.compareAtPrice,
                               quantity: 1,
-                              availableStock: product.availableStock,
-                              inStock: product.inStock,
-                              addedAt: DateTime.now(),
                             ),
                           );
                     },
-              child: const Text(
-                'Add',
-                style: TextStyle(fontSize: 12),
-              ),
+              child: const Text('Add', style: TextStyle(fontSize: 12)),
             ),
           ),
           IconButton(
@@ -323,7 +294,6 @@ class _ActionsRow extends ConsumerWidget {
                             price: product.sellingPrice,
                             compareAtPrice: product.compareAtPrice,
                             inStock: product.inStock,
-                            availableStock: product.availableStock,
                             addedAt: DateTime.now(),
                           ),
                         );

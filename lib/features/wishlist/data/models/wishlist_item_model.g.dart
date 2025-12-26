@@ -19,7 +19,6 @@ _$WishlistItemModelImpl _$$WishlistItemModelImplFromJson(
       price: (json['price'] as num).toDouble(),
       compareAtPrice: (json['compareAtPrice'] as num?)?.toDouble(),
       inStock: json['inStock'] as bool,
-      availableStock: (json['availableStock'] as num).toInt(),
       addedAt: const TimestampConverter().fromJson(json['addedAt']),
     );
 
@@ -36,6 +35,5 @@ Map<String, dynamic> _$$WishlistItemModelImplToJson(
       'price': instance.price,
       'compareAtPrice': instance.compareAtPrice,
       'inStock': instance.inStock,
-      'availableStock': instance.availableStock,
       'addedAt': const TimestampConverter().toJson(instance.addedAt),
     };

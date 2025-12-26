@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'order_model.freezed.dart';
 part 'order_model.g.dart';
 
+/// =======================================================
+/// ORDER ITEM
+/// =======================================================
+
 @freezed
 class OrderItemModel with _$OrderItemModel {
   const factory OrderItemModel({
@@ -23,6 +27,10 @@ class OrderItemModel with _$OrderItemModel {
       _$OrderItemModelFromJson(json);
 }
 
+/// =======================================================
+/// SHIPPING ADDRESS
+/// =======================================================
+
 @freezed
 class ShippingAddressModel with _$ShippingAddressModel {
   const factory ShippingAddressModel({
@@ -40,107 +48,127 @@ class ShippingAddressModel with _$ShippingAddressModel {
       _$ShippingAddressModelFromJson(json);
 }
 
+/// =======================================================
+/// ORDER MODEL (IDEMPOTENT)
+/// =======================================================
+
 @freezed
 class OrderModel with _$OrderModel {
-  const OrderModel._(); // 👈 required for custom getters
+  const OrderModel._();
 
   const factory OrderModel({
+    /// 🔑 Firestore document ID (server-generated)
     required String id,
+
+    /// 🔑 Auth UID
     required String userId,
+
+    /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+    required String idempotencyKey,
+
+    /// Human-readable order number
     required String orderNumber,
 
-    // Items
+    // ---------------- ITEMS ----------------
     required List<OrderItemModel> items,
     required int totalItems,
 
-    // Pricing
+    // ---------------- PRICING ----------------
     required double subtotal,
     required double discount,
     required double shippingCost,
     required double tax,
     required double total,
 
-    // Shipping
+    // ---------------- SHIPPING ----------------
     required ShippingAddressModel shippingAddress,
 
-    // Payment
+    // ---------------- PAYMENT ----------------
     required String paymentMethod,
-    @Default('pending') String paymentStatus, // pending, paid, failed, refunded
 
-    // Status
-    @Default('pending')
-    String status, // pending, confirmed, processing, shipped, delivered, cancelled
+    /// pending | paid | failed | refunded
+    @Default('pending') String paymentStatus,
 
-    // Tracking
+    // ---------------- ORDER STATE ----------------
+    /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
+    @Default('payment_pending') String status,
+
+    // ---------------- TRACKING ----------------
     String? trackingNumber,
     String? carrier,
 
-    // Timestamps (DOMAIN only – Firestore sets them)
+    // ---------------- TIMESTAMPS ----------------
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? paidAt,
     DateTime? confirmedAt,
     DateTime? shippedAt,
     DateTime? deliveredAt,
     DateTime? cancelledAt,
     int? createdAtMillis,
 
-    // Notes
+    // ---------------- NOTES ----------------
     String? customerNote,
     String? adminNote,
-
     @Default(false) bool isDeleted,
   }) = _OrderModel;
 
-  /// ===============================
-  /// Firestore → Domain mapping
-  /// ===============================
+  /// =====================================================
+  /// Firestore → Domain Mapper
+  /// =====================================================
+
   factory OrderModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data();
-    if (data == null) throw Exception('Order document is null');
+    if (data == null) {
+      throw Exception('Order document is null');
+    }
 
     return OrderModel(
       id: doc.id,
-      userId: data['userId'],
-      orderNumber: data['orderNumber'],
+      userId: data['userId'] as String,
+      idempotencyKey: data['idempotencyKey'] as String,
+      orderNumber: data['orderNumber'] as String,
       items: (data['items'] as List)
-          .map((e) => OrderItemModel.fromJson(e))
+          .map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalItems: data['totalItems'],
+      totalItems: data['totalItems'] as int,
       subtotal: (data['subtotal'] as num).toDouble(),
       discount: (data['discount'] as num).toDouble(),
       shippingCost: (data['shippingCost'] as num).toDouble(),
       tax: (data['tax'] as num).toDouble(),
       total: (data['total'] as num).toDouble(),
-      shippingAddress:
-          ShippingAddressModel.fromJson(data['shippingAddress']),
-      paymentMethod: data['paymentMethod'],
-      paymentStatus: data['paymentStatus'],
-      status: data['status'],
+      shippingAddress: ShippingAddressModel.fromJson(
+        data['shippingAddress'] as Map<String, dynamic>,
+      ),
+      paymentMethod: data['paymentMethod'] as String,
+      paymentStatus: data['paymentStatus'] ?? 'pending',
+      status: data['status'] ?? 'payment_pending',
       trackingNumber: data['trackingNumber'],
       carrier: data['carrier'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      paidAt: (data['paidAt'] as Timestamp?)?.toDate(),
       confirmedAt: (data['confirmedAt'] as Timestamp?)?.toDate(),
       shippedAt: (data['shippedAt'] as Timestamp?)?.toDate(),
       deliveredAt: (data['deliveredAt'] as Timestamp?)?.toDate(),
       cancelledAt: (data['cancelledAt'] as Timestamp?)?.toDate(),
-      createdAtMillis: data['createdAtMillis'] as int?,
+      createdAtMillis: data['createdAtMillis'],
       customerNote: data['customerNote'],
       adminNote: data['adminNote'],
       isDeleted: data['isDeleted'] ?? false,
     );
   }
 
-  /// ===============================
-  /// DOMAIN / UI HELPERS
-  /// ===============================
+  /// =====================================================
+  /// DOMAIN HELPERS (UI + RULE SAFETY)
+  /// =====================================================
 
   String get statusDisplay {
     switch (status) {
-      case 'pending':
-        return 'Pending';
+      case 'payment_pending':
+        return 'Awaiting Payment';
       case 'confirmed':
         return 'Confirmed';
       case 'processing':
@@ -151,14 +179,19 @@ class OrderModel with _$OrderModel {
         return 'Delivered';
       case 'cancelled':
         return 'Cancelled';
+      case 'failed':
+        return 'Failed';
       default:
         return 'Unknown';
     }
   }
 
-  bool get canCancel =>
-      status == 'pending' || status == 'confirmed';
+  /// ✅ Matches Firestore rules EXACTLY
+  bool get canCancel => status == 'payment_pending' || status == 'confirmed';
 
   bool get isActive =>
-      status != 'delivered' && status != 'cancelled';
+      status != 'delivered' && status != 'cancelled' && status != 'failed';
+
+  bool get isFinal =>
+      status == 'delivered' || status == 'cancelled' || status == 'failed';
 }

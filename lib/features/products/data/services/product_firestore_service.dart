@@ -1,21 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 import '../models/product_variant_model.dart';
-import 'package:ecommerce_app/features/products/data/models/product_model.dart';
-
 
 class ProductFirestoreService {
-  final _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _products =>
       _firestore.collection('products');
 
   // =====================================================
-  // Products
+  // Products (METADATA ONLY)
   // =====================================================
 
   Future<void> createProduct(ProductModel product) async {
-    await _products.doc(product.id).set(product.toFirestore());
+    final data = product.toFirestore();
+
+    // 🚨 HARD SAFETY: ensure no derived stock fields ever get written
+    data.remove('availableStock');
+    data.remove('inStock');
+    data.remove('stockStatus');
+
+    await _products.doc(product.id).set(data);
   }
 
   Future<ProductModel?> getProductById(String productId) async {
@@ -48,9 +53,7 @@ class ProductFirestoreService {
     }
 
     final snapshot = await query.get();
-    return snapshot.docs
-        .map((doc) => ProductModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
   }
 
   Stream<List<ProductModel>> getProductsStream({
@@ -89,9 +92,7 @@ class ProductFirestoreService {
         .limit(limit)
         .get();
 
-    return snapshot.docs
-        .map((doc) => ProductModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
   }
 
   Future<List<ProductModel>> getNewArrivals({int limit = 10}) async {
@@ -102,9 +103,7 @@ class ProductFirestoreService {
         .limit(limit)
         .get();
 
-    return snapshot.docs
-        .map((doc) => ProductModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
   }
 
   Future<List<ProductModel>> searchProducts(String query) async {
@@ -114,9 +113,7 @@ class ProductFirestoreService {
         .where('searchKeywords', arrayContains: query.toLowerCase())
         .get();
 
-    return snapshot.docs
-        .map((doc) => ProductModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
   }
 
   Future<List<ProductModel>> getProductsByCategory(
@@ -133,15 +130,20 @@ class ProductFirestoreService {
     }
 
     final snapshot = await query.get();
-    return snapshot.docs
-        .map((doc) => ProductModel.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => ProductModel.fromFirestore(doc)).toList();
   }
 
   Future<void> updateProduct(
     String productId,
     Map<String, dynamic> data,
   ) async {
+    // 🚨 HARD SAFETY: stock is NOT allowed here
+    data.remove('totalStock');
+    data.remove('reservedStock');
+    data.remove('availableStock');
+    data.remove('inStock');
+    data.remove('stockStatus');
+
     await _products.doc(productId).update({
       ...data,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -156,7 +158,7 @@ class ProductFirestoreService {
   }
 
   // =====================================================
-  // Product Variants (subcollection)
+  // Product Variants (READ-ONLY)
   // =====================================================
 
   CollectionReference<Map<String, dynamic>> _variants(String productId) =>
@@ -165,9 +167,8 @@ class ProductFirestoreService {
   Future<List<ProductVariantModel>> getProductVariants(
     String productId,
   ) async {
-    final snapshot = await _variants(productId)
-        .where('isDeleted', isEqualTo: false)
-        .get();
+    final snapshot =
+        await _variants(productId).where('isDeleted', isEqualTo: false).get();
 
     return snapshot.docs
         .map((doc) => ProductVariantModel.fromFirestore(doc))

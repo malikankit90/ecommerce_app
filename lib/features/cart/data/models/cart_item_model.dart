@@ -29,25 +29,25 @@ class CartItemModel with _$CartItemModel {
   const factory CartItemModel({
     required String id,
     required String userId,
+
+    // Product identity
     required String productId,
     required String productName,
     required String productSlug,
     required String brandName,
     required String thumbnailUrl,
+
+    // Pricing
     required double price,
     double? compareAtPrice,
     required int quantity,
-    
+
     // Variant info (if selected)
     String? variantId,
     String? size,
     String? color,
     String? colorHex,
-    
-    // Stock validation
-    required int availableStock,
-    required bool inStock,
-    
+
     // Timestamps
     @TimestampConverter() DateTime? addedAt,
     @TimestampConverter() DateTime? updatedAt,
@@ -60,28 +60,33 @@ class CartItemModel with _$CartItemModel {
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data();
-    if (data == null) throw Exception('Cart item document is null');
+    if (data == null) {
+      throw Exception('Cart item document is null');
+    }
     return CartItemModel.fromJson({...data, 'id': doc.id});
   }
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();
     json.remove('id');
-    
+
     json['addedAt'] ??= FieldValue.serverTimestamp();
     json['updatedAt'] ??= FieldValue.serverTimestamp();
-    
+
     return json;
   }
 
-  // Computed properties
+  // ============================
+  // DERIVED UI HELPERS (SAFE)
+  // ============================
+
   double get subtotal => price * quantity;
-  double get savings => compareAtPrice != null 
-      ? (compareAtPrice! - price) * quantity 
-      : 0.0;
+
+  double get savings =>
+      compareAtPrice != null ? (compareAtPrice! - price) * quantity : 0.0;
+
   bool get hasDiscount => compareAtPrice != null && compareAtPrice! > price;
-  bool get isAvailable => inStock && quantity <= availableStock;
-  String get variantDisplay => size != null && color != null 
-      ? '$color - $size' 
-      : '';
+
+  String get variantDisplay =>
+      size != null && color != null ? '$color - $size' : '';
 }

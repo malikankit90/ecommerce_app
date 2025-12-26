@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,10 +21,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      
+
       // Send email verification
       await userCredential.user?.sendEmailVerification();
-      
+
       return userCredential;
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
@@ -52,13 +51,13 @@ class AuthService {
     try {
       // Trigger the Google Sign In flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         throw Exception('Google sign in was cancelled');
       }
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = 
+      final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       // Create a new credential

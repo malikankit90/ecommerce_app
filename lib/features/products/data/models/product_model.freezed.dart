@@ -278,12 +278,9 @@ mixin _$ProductModel {
   int get discountPercentage => throw _privateConstructorUsedError;
   String get currency => throw _privateConstructorUsedError;
   double? get costPrice =>
-      throw _privateConstructorUsedError; // Inventory Summary
+      throw _privateConstructorUsedError; // 🔴 INVENTORY (SOURCE OF TRUTH ONLY)
   int get totalStock => throw _privateConstructorUsedError;
   int get reservedStock => throw _privateConstructorUsedError;
-  int get availableStock => throw _privateConstructorUsedError;
-  bool get inStock => throw _privateConstructorUsedError;
-  String get stockStatus => throw _privateConstructorUsedError;
   int get lowStockThreshold => throw _privateConstructorUsedError; // Media
   List<ProductImage> get images => throw _privateConstructorUsedError;
   String get thumbnailUrl => throw _privateConstructorUsedError;
@@ -324,7 +321,7 @@ mixin _$ProductModel {
   Map<String, double> get dimensions => throw _privateConstructorUsedError;
   bool get freeShipping => throw _privateConstructorUsedError;
   List<String> get shippingMethods =>
-      throw _privateConstructorUsedError; // Timestamps - ALL NULLABLE with TimestampConverter
+      throw _privateConstructorUsedError; // Timestamps
   @TimestampConverter()
   DateTime? get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -375,9 +372,6 @@ abstract class $ProductModelCopyWith<$Res> {
       double? costPrice,
       int totalStock,
       int reservedStock,
-      int availableStock,
-      bool inStock,
-      String stockStatus,
       int lowStockThreshold,
       List<ProductImage> images,
       String thumbnailUrl,
@@ -457,9 +451,6 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
     Object? costPrice = freezed,
     Object? totalStock = null,
     Object? reservedStock = null,
-    Object? availableStock = null,
-    Object? inStock = null,
-    Object? stockStatus = null,
     Object? lowStockThreshold = null,
     Object? images = null,
     Object? thumbnailUrl = null,
@@ -587,18 +578,6 @@ class _$ProductModelCopyWithImpl<$Res, $Val extends ProductModel>
           ? _value.reservedStock
           : reservedStock // ignore: cast_nullable_to_non_nullable
               as int,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
-      inStock: null == inStock
-          ? _value.inStock
-          : inStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      stockStatus: null == stockStatus
-          ? _value.stockStatus
-          : stockStatus // ignore: cast_nullable_to_non_nullable
-              as String,
       lowStockThreshold: null == lowStockThreshold
           ? _value.lowStockThreshold
           : lowStockThreshold // ignore: cast_nullable_to_non_nullable
@@ -797,9 +776,6 @@ abstract class _$$ProductModelImplCopyWith<$Res>
       double? costPrice,
       int totalStock,
       int reservedStock,
-      int availableStock,
-      bool inStock,
-      String stockStatus,
       int lowStockThreshold,
       List<ProductImage> images,
       String thumbnailUrl,
@@ -877,9 +853,6 @@ class __$$ProductModelImplCopyWithImpl<$Res>
     Object? costPrice = freezed,
     Object? totalStock = null,
     Object? reservedStock = null,
-    Object? availableStock = null,
-    Object? inStock = null,
-    Object? stockStatus = null,
     Object? lowStockThreshold = null,
     Object? images = null,
     Object? thumbnailUrl = null,
@@ -1007,18 +980,6 @@ class __$$ProductModelImplCopyWithImpl<$Res>
           ? _value.reservedStock
           : reservedStock // ignore: cast_nullable_to_non_nullable
               as int,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
-      inStock: null == inStock
-          ? _value.inStock
-          : inStock // ignore: cast_nullable_to_non_nullable
-              as bool,
-      stockStatus: null == stockStatus
-          ? _value.stockStatus
-          : stockStatus // ignore: cast_nullable_to_non_nullable
-              as String,
       lowStockThreshold: null == lowStockThreshold
           ? _value.lowStockThreshold
           : lowStockThreshold // ignore: cast_nullable_to_non_nullable
@@ -1212,9 +1173,6 @@ class _$ProductModelImpl extends _ProductModel {
       this.costPrice,
       this.totalStock = 0,
       this.reservedStock = 0,
-      this.availableStock = 0,
-      this.inStock = false,
-      this.stockStatus = 'out_of_stock',
       this.lowStockThreshold = 10,
       final List<ProductImage> images = const <ProductImage>[],
       required this.thumbnailUrl,
@@ -1325,22 +1283,13 @@ class _$ProductModelImpl extends _ProductModel {
   final String currency;
   @override
   final double? costPrice;
-// Inventory Summary
+// 🔴 INVENTORY (SOURCE OF TRUTH ONLY)
   @override
   @JsonKey()
   final int totalStock;
   @override
   @JsonKey()
   final int reservedStock;
-  @override
-  @JsonKey()
-  final int availableStock;
-  @override
-  @JsonKey()
-  final bool inStock;
-  @override
-  @JsonKey()
-  final String stockStatus;
   @override
   @JsonKey()
   final int lowStockThreshold;
@@ -1483,7 +1432,7 @@ class _$ProductModelImpl extends _ProductModel {
     return EqualUnmodifiableListView(_shippingMethods);
   }
 
-// Timestamps - ALL NULLABLE with TimestampConverter
+// Timestamps
   @override
   @TimestampConverter()
   final DateTime? createdAt;
@@ -1507,7 +1456,7 @@ class _$ProductModelImpl extends _ProductModel {
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, sku: $sku, name: $name, slug: $slug, description: $description, shortDescription: $shortDescription, brandId: $brandId, brandName: $brandName, categoryId: $categoryId, categoryName: $categoryName, categoryPath: $categoryPath, subCategoryId: $subCategoryId, tags: $tags, basePrice: $basePrice, sellingPrice: $sellingPrice, compareAtPrice: $compareAtPrice, discountPercentage: $discountPercentage, currency: $currency, costPrice: $costPrice, totalStock: $totalStock, reservedStock: $reservedStock, availableStock: $availableStock, inStock: $inStock, stockStatus: $stockStatus, lowStockThreshold: $lowStockThreshold, images: $images, thumbnailUrl: $thumbnailUrl, videoUrl: $videoUrl, video360Url: $video360Url, material: $material, careInstructions: $careInstructions, fit: $fit, origin: $origin, specifications: $specifications, metaTitle: $metaTitle, metaDescription: $metaDescription, searchKeywords: $searchKeywords, status: $status, isFeatured: $isFeatured, isNewArrival: $isNewArrival, isBestseller: $isBestseller, isSale: $isSale, isExclusive: $isExclusive, averageRating: $averageRating, totalReviews: $totalReviews, ratingDistribution: $ratingDistribution, viewCount: $viewCount, addToCartCount: $addToCartCount, purchaseCount: $purchaseCount, wishlistCount: $wishlistCount, conversionRate: $conversionRate, popularityScore: $popularityScore, vendorId: $vendorId, vendorName: $vendorName, weight: $weight, dimensions: $dimensions, freeShipping: $freeShipping, shippingMethods: $shippingMethods, createdAt: $createdAt, updatedAt: $updatedAt, publishedAt: $publishedAt, deletedAt: $deletedAt, createdBy: $createdBy, updatedBy: $updatedBy, isDeleted: $isDeleted)';
+    return 'ProductModel(id: $id, sku: $sku, name: $name, slug: $slug, description: $description, shortDescription: $shortDescription, brandId: $brandId, brandName: $brandName, categoryId: $categoryId, categoryName: $categoryName, categoryPath: $categoryPath, subCategoryId: $subCategoryId, tags: $tags, basePrice: $basePrice, sellingPrice: $sellingPrice, compareAtPrice: $compareAtPrice, discountPercentage: $discountPercentage, currency: $currency, costPrice: $costPrice, totalStock: $totalStock, reservedStock: $reservedStock, lowStockThreshold: $lowStockThreshold, images: $images, thumbnailUrl: $thumbnailUrl, videoUrl: $videoUrl, video360Url: $video360Url, material: $material, careInstructions: $careInstructions, fit: $fit, origin: $origin, specifications: $specifications, metaTitle: $metaTitle, metaDescription: $metaDescription, searchKeywords: $searchKeywords, status: $status, isFeatured: $isFeatured, isNewArrival: $isNewArrival, isBestseller: $isBestseller, isSale: $isSale, isExclusive: $isExclusive, averageRating: $averageRating, totalReviews: $totalReviews, ratingDistribution: $ratingDistribution, viewCount: $viewCount, addToCartCount: $addToCartCount, purchaseCount: $purchaseCount, wishlistCount: $wishlistCount, conversionRate: $conversionRate, popularityScore: $popularityScore, vendorId: $vendorId, vendorName: $vendorName, weight: $weight, dimensions: $dimensions, freeShipping: $freeShipping, shippingMethods: $shippingMethods, createdAt: $createdAt, updatedAt: $updatedAt, publishedAt: $publishedAt, deletedAt: $deletedAt, createdBy: $createdBy, updatedBy: $updatedBy, isDeleted: $isDeleted)';
   }
 
   @override
@@ -1551,11 +1500,6 @@ class _$ProductModelImpl extends _ProductModel {
                 other.totalStock == totalStock) &&
             (identical(other.reservedStock, reservedStock) ||
                 other.reservedStock == reservedStock) &&
-            (identical(other.availableStock, availableStock) ||
-                other.availableStock == availableStock) &&
-            (identical(other.inStock, inStock) || other.inStock == inStock) &&
-            (identical(other.stockStatus, stockStatus) ||
-                other.stockStatus == stockStatus) &&
             (identical(other.lowStockThreshold, lowStockThreshold) ||
                 other.lowStockThreshold == lowStockThreshold) &&
             const DeepCollectionEquality().equals(other._images, _images) &&
@@ -1612,8 +1556,10 @@ class _$ProductModelImpl extends _ProductModel {
             (identical(other.vendorName, vendorName) ||
                 other.vendorName == vendorName) &&
             (identical(other.weight, weight) || other.weight == weight) &&
-            const DeepCollectionEquality().equals(other._dimensions, _dimensions) &&
-            (identical(other.freeShipping, freeShipping) || other.freeShipping == freeShipping) &&
+            const DeepCollectionEquality()
+                .equals(other._dimensions, _dimensions) &&
+            (identical(other.freeShipping, freeShipping) ||
+                other.freeShipping == freeShipping) &&
             const DeepCollectionEquality().equals(other._shippingMethods, _shippingMethods) &&
             (identical(other.createdAt, createdAt) || other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt) &&
@@ -1649,9 +1595,6 @@ class _$ProductModelImpl extends _ProductModel {
         costPrice,
         totalStock,
         reservedStock,
-        availableStock,
-        inStock,
-        stockStatus,
         lowStockThreshold,
         const DeepCollectionEquality().hash(_images),
         thumbnailUrl,
@@ -1734,9 +1677,6 @@ abstract class _ProductModel extends ProductModel {
       final double? costPrice,
       final int totalStock,
       final int reservedStock,
-      final int availableStock,
-      final bool inStock,
-      final String stockStatus,
       final int lowStockThreshold,
       final List<ProductImage> images,
       required final String thumbnailUrl,
@@ -1820,17 +1760,11 @@ abstract class _ProductModel extends ProductModel {
   @override
   String get currency;
   @override
-  double? get costPrice; // Inventory Summary
+  double? get costPrice; // 🔴 INVENTORY (SOURCE OF TRUTH ONLY)
   @override
   int get totalStock;
   @override
   int get reservedStock;
-  @override
-  int get availableStock;
-  @override
-  bool get inStock;
-  @override
-  String get stockStatus;
   @override
   int get lowStockThreshold; // Media
   @override
@@ -1898,8 +1832,7 @@ abstract class _ProductModel extends ProductModel {
   @override
   bool get freeShipping;
   @override
-  List<String>
-      get shippingMethods; // Timestamps - ALL NULLABLE with TimestampConverter
+  List<String> get shippingMethods; // Timestamps
   @override
   @TimestampConverter()
   DateTime? get createdAt;

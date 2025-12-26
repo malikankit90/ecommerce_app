@@ -21,12 +21,12 @@ CartItemModel _$CartItemModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$CartItemModel {
   String get id => throw _privateConstructorUsedError;
-  String get userId => throw _privateConstructorUsedError;
+  String get userId => throw _privateConstructorUsedError; // Product identity
   String get productId => throw _privateConstructorUsedError;
   String get productName => throw _privateConstructorUsedError;
   String get productSlug => throw _privateConstructorUsedError;
   String get brandName => throw _privateConstructorUsedError;
-  String get thumbnailUrl => throw _privateConstructorUsedError;
+  String get thumbnailUrl => throw _privateConstructorUsedError; // Pricing
   double get price => throw _privateConstructorUsedError;
   double? get compareAtPrice => throw _privateConstructorUsedError;
   int get quantity =>
@@ -34,10 +34,7 @@ mixin _$CartItemModel {
   String? get variantId => throw _privateConstructorUsedError;
   String? get size => throw _privateConstructorUsedError;
   String? get color => throw _privateConstructorUsedError;
-  String? get colorHex =>
-      throw _privateConstructorUsedError; // Stock validation
-  int get availableStock => throw _privateConstructorUsedError;
-  bool get inStock => throw _privateConstructorUsedError; // Timestamps
+  String? get colorHex => throw _privateConstructorUsedError; // Timestamps
   @TimestampConverter()
   DateTime? get addedAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -74,8 +71,6 @@ abstract class $CartItemModelCopyWith<$Res> {
       String? size,
       String? color,
       String? colorHex,
-      int availableStock,
-      bool inStock,
       @TimestampConverter() DateTime? addedAt,
       @TimestampConverter() DateTime? updatedAt});
 }
@@ -109,8 +104,6 @@ class _$CartItemModelCopyWithImpl<$Res, $Val extends CartItemModel>
     Object? size = freezed,
     Object? color = freezed,
     Object? colorHex = freezed,
-    Object? availableStock = null,
-    Object? inStock = null,
     Object? addedAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -171,14 +164,6 @@ class _$CartItemModelCopyWithImpl<$Res, $Val extends CartItemModel>
           ? _value.colorHex
           : colorHex // ignore: cast_nullable_to_non_nullable
               as String?,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
-      inStock: null == inStock
-          ? _value.inStock
-          : inStock // ignore: cast_nullable_to_non_nullable
-              as bool,
       addedAt: freezed == addedAt
           ? _value.addedAt
           : addedAt // ignore: cast_nullable_to_non_nullable
@@ -214,8 +199,6 @@ abstract class _$$CartItemModelImplCopyWith<$Res>
       String? size,
       String? color,
       String? colorHex,
-      int availableStock,
-      bool inStock,
       @TimestampConverter() DateTime? addedAt,
       @TimestampConverter() DateTime? updatedAt});
 }
@@ -247,8 +230,6 @@ class __$$CartItemModelImplCopyWithImpl<$Res>
     Object? size = freezed,
     Object? color = freezed,
     Object? colorHex = freezed,
-    Object? availableStock = null,
-    Object? inStock = null,
     Object? addedAt = freezed,
     Object? updatedAt = freezed,
   }) {
@@ -309,14 +290,6 @@ class __$$CartItemModelImplCopyWithImpl<$Res>
           ? _value.colorHex
           : colorHex // ignore: cast_nullable_to_non_nullable
               as String?,
-      availableStock: null == availableStock
-          ? _value.availableStock
-          : availableStock // ignore: cast_nullable_to_non_nullable
-              as int,
-      inStock: null == inStock
-          ? _value.inStock
-          : inStock // ignore: cast_nullable_to_non_nullable
-              as bool,
       addedAt: freezed == addedAt
           ? _value.addedAt
           : addedAt // ignore: cast_nullable_to_non_nullable
@@ -347,8 +320,6 @@ class _$CartItemModelImpl extends _CartItemModel {
       this.size,
       this.color,
       this.colorHex,
-      required this.availableStock,
-      required this.inStock,
       @TimestampConverter() this.addedAt,
       @TimestampConverter() this.updatedAt})
       : super._();
@@ -360,6 +331,7 @@ class _$CartItemModelImpl extends _CartItemModel {
   final String id;
   @override
   final String userId;
+// Product identity
   @override
   final String productId;
   @override
@@ -370,6 +342,7 @@ class _$CartItemModelImpl extends _CartItemModel {
   final String brandName;
   @override
   final String thumbnailUrl;
+// Pricing
   @override
   final double price;
   @override
@@ -385,11 +358,6 @@ class _$CartItemModelImpl extends _CartItemModel {
   final String? color;
   @override
   final String? colorHex;
-// Stock validation
-  @override
-  final int availableStock;
-  @override
-  final bool inStock;
 // Timestamps
   @override
   @TimestampConverter()
@@ -400,7 +368,7 @@ class _$CartItemModelImpl extends _CartItemModel {
 
   @override
   String toString() {
-    return 'CartItemModel(id: $id, userId: $userId, productId: $productId, productName: $productName, productSlug: $productSlug, brandName: $brandName, thumbnailUrl: $thumbnailUrl, price: $price, compareAtPrice: $compareAtPrice, quantity: $quantity, variantId: $variantId, size: $size, color: $color, colorHex: $colorHex, availableStock: $availableStock, inStock: $inStock, addedAt: $addedAt, updatedAt: $updatedAt)';
+    return 'CartItemModel(id: $id, userId: $userId, productId: $productId, productName: $productName, productSlug: $productSlug, brandName: $brandName, thumbnailUrl: $thumbnailUrl, price: $price, compareAtPrice: $compareAtPrice, quantity: $quantity, variantId: $variantId, size: $size, color: $color, colorHex: $colorHex, addedAt: $addedAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -431,9 +399,6 @@ class _$CartItemModelImpl extends _CartItemModel {
             (identical(other.color, color) || other.color == color) &&
             (identical(other.colorHex, colorHex) ||
                 other.colorHex == colorHex) &&
-            (identical(other.availableStock, availableStock) ||
-                other.availableStock == availableStock) &&
-            (identical(other.inStock, inStock) || other.inStock == inStock) &&
             (identical(other.addedAt, addedAt) || other.addedAt == addedAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt));
@@ -457,8 +422,6 @@ class _$CartItemModelImpl extends _CartItemModel {
       size,
       color,
       colorHex,
-      availableStock,
-      inStock,
       addedAt,
       updatedAt);
 
@@ -494,8 +457,6 @@ abstract class _CartItemModel extends CartItemModel {
       final String? size,
       final String? color,
       final String? colorHex,
-      required final int availableStock,
-      required final bool inStock,
       @TimestampConverter() final DateTime? addedAt,
       @TimestampConverter() final DateTime? updatedAt}) = _$CartItemModelImpl;
   const _CartItemModel._() : super._();
@@ -506,7 +467,7 @@ abstract class _CartItemModel extends CartItemModel {
   @override
   String get id;
   @override
-  String get userId;
+  String get userId; // Product identity
   @override
   String get productId;
   @override
@@ -516,7 +477,7 @@ abstract class _CartItemModel extends CartItemModel {
   @override
   String get brandName;
   @override
-  String get thumbnailUrl;
+  String get thumbnailUrl; // Pricing
   @override
   double get price;
   @override
@@ -530,11 +491,7 @@ abstract class _CartItemModel extends CartItemModel {
   @override
   String? get color;
   @override
-  String? get colorHex; // Stock validation
-  @override
-  int get availableStock;
-  @override
-  bool get inStock; // Timestamps
+  String? get colorHex; // Timestamps
   @override
   @TimestampConverter()
   DateTime? get addedAt;

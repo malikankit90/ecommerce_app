@@ -176,14 +176,16 @@ class _OrderCard extends StatelessWidget {
               if (order.trackingNumber != null) ...[
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.local_shipping, size: 16, color: Colors.blue.shade700),
+                      Icon(Icons.local_shipping,
+                          size: 16, color: Colors.blue.shade700),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -210,7 +212,7 @@ class _OrderCard extends StatelessWidget {
     IconData icon;
 
     switch (status) {
-      case 'pending':
+      case 'payment_pending': // ✅ FIXED
         color = Colors.orange;
         icon = Icons.pending;
         break;

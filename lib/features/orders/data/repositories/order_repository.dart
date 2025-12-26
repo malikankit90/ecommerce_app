@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/order_model.dart';
 import '../services/order_firestore_service.dart';
 
@@ -9,74 +11,59 @@ class OrderRepository {
   }) : _firestoreService = firestoreService;
 
   // =====================================================
-  // Orders - Read
+  // ORDERS — READ
   // =====================================================
 
-  Future<OrderModel?> getOrderById(String orderId) async {
-    try {
-      return await _firestoreService.getOrderById(orderId);
-    } catch (e) {
-      throw Exception('Failed to get order: $e');
-    }
-  }
-
   Stream<OrderModel?> getOrderStream(String orderId) {
-    try {
-      return _firestoreService.getOrderStream(orderId);
-    } catch (e) {
-      throw Exception('Failed to stream order: $e');
-    }
+    debugPrint('🟢 OrderRepository.getOrderStream → orderId=$orderId');
+    return _firestoreService.getOrderStream(orderId);
   }
 
   Stream<List<OrderModel>> getUserOrdersStream(String userId) {
-    try {
-      return _firestoreService.getUserOrdersStream(userId);
-    } catch (e) {
-      throw Exception('Failed to stream user orders: $e');
-    }
-  }
-
-  Future<List<OrderModel>> getUserOrders(String userId) async {
-    try {
-      return await _firestoreService.getUserOrders(userId);
-    } catch (e) {
-      throw Exception('Failed to get user orders: $e');
-    }
+    debugPrint('🟢 OrderRepository.getUserOrdersStream → userId=$userId');
+    return _firestoreService.getUserOrdersStream(userId);
   }
 
   // =====================================================
-  // Orders - Write
+  // ORDERS — WRITE
   // =====================================================
 
-  Future<void> createOrder(OrderModel order) async {
-    try {
-      await _firestoreService.createOrder(order);
-    } catch (e) {
-      throw Exception('Failed to create order: $e');
-    }
+  /// -----------------------------------------------------
+  /// CREATE ORDER (IDEMPOTENT)
+  ///
+  /// IMPORTANT:
+  /// - order.id IS the idempotency key
+  /// - Safe to retry
+  /// - May return EXISTING orderId
+  /// -----------------------------------------------------
+  Future<String> createOrder(OrderModel order) async {
+    debugPrint('🟢 OrderRepository.createOrder');
+    debugPrint('   ↳ userId=${order.userId}');
+    debugPrint('   ↳ idempotencyKey(order.id)=${order.id}');
+    debugPrint('   ↳ orderNumber=${order.orderNumber}');
+
+    final orderId = await _firestoreService.createOrder(order);
+
+    debugPrint('✅ OrderRepository.createOrder → orderId=$orderId');
+    return orderId;
   }
 
-  Future<void> updateOrderStatus(String orderId, String status) async {
-    try {
-      await _firestoreService.updateOrderStatus(orderId, status);
-    } catch (e) {
-      throw Exception('Failed to update order status: $e');
-    }
-  }
-
+  /// -----------------------------------------------------
+  /// CANCEL ORDER
+  /// (Firestore rules enforce safety)
+  /// -----------------------------------------------------
   Future<void> cancelOrder(String orderId) async {
-    try {
-      await _firestoreService.cancelOrder(orderId);
-    } catch (e) {
-      throw Exception('Failed to cancel order: $e');
-    }
+    debugPrint('🟡 OrderRepository.cancelOrder → orderId=$orderId');
+    await _firestoreService.cancelOrder(orderId);
+    debugPrint('✅ OrderRepository.cancelOrder → success');
   }
 
+  /// -----------------------------------------------------
+  /// GENERATE ORDER NUMBER
+  /// -----------------------------------------------------
   Future<String> generateOrderNumber() async {
-    try {
-      return await _firestoreService.generateOrderNumber();
-    } catch (e) {
-      throw Exception('Failed to generate order number: $e');
-    }
+    final number = await _firestoreService.generateOrderNumber();
+    debugPrint('🟢 OrderRepository.generateOrderNumber → $number');
+    return number;
   }
 }

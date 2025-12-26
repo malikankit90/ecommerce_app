@@ -21,7 +21,7 @@ class CategoryIconItem extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: Colors.grey.shade800,
-            child: Icon(
+            child: const Icon(
               Icons.category, // can be replaced later with category.icon
               color: Colors.white,
             ),

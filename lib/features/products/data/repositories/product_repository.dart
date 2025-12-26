@@ -1,7 +1,6 @@
 import '../models/product_model.dart';
 import '../models/product_variant_model.dart';
 import '../services/product_firestore_service.dart';
-import 'package:ecommerce_app/features/products/data/models/product_model.dart';
 
 class ProductRepository {
   final ProductFirestoreService _firestoreService;
@@ -11,7 +10,7 @@ class ProductRepository {
   }) : _firestoreService = firestoreService;
 
   // =====================================================
-  // Products - Read
+  // Products - READ ONLY (NO STOCK MUTATION)
   // =====================================================
 
   Future<ProductModel?> getProductById(String productId) async {
@@ -104,7 +103,8 @@ class ProductRepository {
   }
 
   // =====================================================
-  // Products - Write
+  // Products - WRITE (METADATA ONLY)
+  // ⚠️ NEVER TOUCH STOCK HERE
   // =====================================================
 
   Future<void> createProduct(ProductModel product) async {
@@ -120,6 +120,10 @@ class ProductRepository {
     Map<String, dynamic> data,
   ) async {
     try {
+      // 🚨 SAFETY GUARD: prevent accidental stock mutation
+      data.remove('totalStock');
+      data.remove('reservedStock');
+
       await _firestoreService.updateProduct(productId, data);
     } catch (e) {
       throw Exception('Failed to update product: $e');
@@ -129,13 +133,13 @@ class ProductRepository {
   Future<void> incrementViewCount(String productId) async {
     try {
       await _firestoreService.incrementViewCount(productId);
-    } catch (e) {
+    } catch (_) {
       // Silent fail for analytics
     }
   }
 
   // =====================================================
-  // Product Variants
+  // Product Variants (READ ONLY)
   // =====================================================
 
   Future<List<ProductVariantModel>> getProductVariants(

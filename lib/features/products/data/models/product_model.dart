@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:json_annotation/json_annotation.dart'; // 🔥 REQUIRED
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'product_model.freezed.dart';
@@ -67,12 +66,9 @@ class ProductModel with _$ProductModel {
     @Default('USD') String currency,
     double? costPrice,
 
-    // Inventory Summary
+    // 🔴 INVENTORY (SOURCE OF TRUTH ONLY)
     @Default(0) int totalStock,
     @Default(0) int reservedStock,
-    @Default(0) int availableStock,
-    @Default(false) bool inStock,
-    @Default('out_of_stock') String stockStatus,
     @Default(10) int lowStockThreshold,
 
     // Media
@@ -124,7 +120,7 @@ class ProductModel with _$ProductModel {
     @Default(false) bool freeShipping,
     @Default(<String>[]) List<String> shippingMethods,
 
-    // Timestamps - ALL NULLABLE with TimestampConverter
+    // Timestamps
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
     @TimestampConverter() DateTime? publishedAt,
@@ -158,16 +154,31 @@ class ProductModel with _$ProductModel {
     return json;
   }
 
-  // Computed properties
-  bool get hasDiscount => (compareAtPrice ?? 0) > sellingPrice;
-  bool get isLowStock => availableStock > 0 && availableStock <= lowStockThreshold;
-  bool get isAvailable => status == 'active' && inStock && !isDeleted;
-  String get displayPrice => '\$$sellingPrice';
-  String get originalPrice => compareAtPrice != null ? '\$$compareAtPrice' : '';
-// Computed properties
+  // ============================
+  // ✅ COMPUTED (DERIVED) VALUES
+  // ============================
 
-bool get isTrending =>
-    popularityScore >= 0.7 ||
-    viewCount >= 100 ||
-    addToCartCount >= 50;
+  int get availableStock => totalStock - reservedStock;
+
+  bool get inStock => availableStock > 0;
+
+  bool get isLowStock =>
+      availableStock > 0 && availableStock <= lowStockThreshold;
+
+  String get stockStatus {
+    if (availableStock <= 0) return 'out_of_stock';
+    if (availableStock <= lowStockThreshold) return 'low_stock';
+    return 'in_stock';
+  }
+
+  bool get hasDiscount => (compareAtPrice ?? 0) > sellingPrice;
+
+  bool get isAvailable => status == 'active' && inStock && !isDeleted;
+
+  String get displayPrice => '\$$sellingPrice';
+
+  String get originalPrice => compareAtPrice != null ? '\$$compareAtPrice' : '';
+
+  bool get isTrending =>
+      popularityScore >= 0.7 || viewCount >= 100 || addToCartCount >= 50;
 }

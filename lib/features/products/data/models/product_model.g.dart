@@ -52,9 +52,6 @@ _$ProductModelImpl _$$ProductModelImplFromJson(Map<String, dynamic> json) =>
       costPrice: (json['costPrice'] as num?)?.toDouble(),
       totalStock: (json['totalStock'] as num?)?.toInt() ?? 0,
       reservedStock: (json['reservedStock'] as num?)?.toInt() ?? 0,
-      availableStock: (json['availableStock'] as num?)?.toInt() ?? 0,
-      inStock: json['inStock'] as bool? ?? false,
-      stockStatus: json['stockStatus'] as String? ?? 'out_of_stock',
       lowStockThreshold: (json['lowStockThreshold'] as num?)?.toInt() ?? 10,
       images: (json['images'] as List<dynamic>?)
               ?.map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
@@ -140,9 +137,6 @@ Map<String, dynamic> _$$ProductModelImplToJson(_$ProductModelImpl instance) =>
       'costPrice': instance.costPrice,
       'totalStock': instance.totalStock,
       'reservedStock': instance.reservedStock,
-      'availableStock': instance.availableStock,
-      'inStock': instance.inStock,
-      'stockStatus': instance.stockStatus,
       'lowStockThreshold': instance.lowStockThreshold,
       'images': instance.images,
       'thumbnailUrl': instance.thumbnailUrl,
