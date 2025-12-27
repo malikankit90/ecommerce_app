@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../cart/presentation/providers/cart_providers.dart';
 import '../../../address/presentation/providers/address_providers.dart';
 import '../../../address/data/models/address_model.dart';
-import '../../../orders/data/models/order_model.dart';
 import '../../../orders/presentation/providers/order_providers.dart';
-import '../../../auth/presentation/providers/auth_providers.dart';
+
+/// =======================================================
+/// UI STATE (CHECKOUT SESSION ONLY)
+/// =======================================================
 
 final selectedAddressProvider = StateProvider<AddressModel?>((ref) => null);
 final selectedPaymentMethodProvider = StateProvider<String>((ref) => 'cod');
 
-/// Stable idempotency key for THIS checkout session
+/// Stable idempotency key for THIS checkout attempt
 final checkoutIdempotencyKeyProvider = StateProvider<String?>((ref) => null);
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -36,15 +39,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final authState = ref.watch(authStateProvider);
 
     return authState.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) =>
-          Scaffold(body: Center(child: Text('Auth error: $error'))),
+      loading: () => const _LoadingScaffold(),
+      error: (e, _) => _ErrorScaffold('Auth error: $e'),
       data: (user) {
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const _LoadingScaffold();
         }
 
         final cartItemsAsync = ref.watch(cartItemsStreamProvider);
@@ -54,22 +53,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           appBar: AppBar(title: const Text('Checkout')),
           body: cartItemsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(child: Text('Error: $error')),
+            error: (e, _) => Center(child: Text('Error: $e')),
             data: (cartItems) {
               if (cartItems.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('Your cart is empty'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => context.go('/'),
-                        child: const Text('Continue Shopping'),
-                      ),
-                    ],
-                  ),
-                );
+                return _EmptyCart(context);
               }
 
               return SingleChildScrollView(
@@ -87,14 +74,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         controller: _noteController,
                         maxLines: 3,
                         decoration: const InputDecoration(
-                          hintText: 'Add any special instructions...',
+                          hintText: 'Special instructions…',
                           border: OutlineInputBorder(),
                         ),
                       ),
                     ),
                     _section('Order Summary'),
                     _summary(cartItems),
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 120),
                   ],
                 ),
               );
@@ -121,10 +108,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Widget _addressSection(AsyncValue<List<AddressModel>> addressesAsync) {
     return addressesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text('Error loading addresses: $e'),
-      ),
+      error: (e, _) =>
+          Padding(padding: const EdgeInsets.all(16), child: Text('$e')),
       data: (addresses) {
         if (addresses.isEmpty) {
           return Padding(
@@ -182,13 +167,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          ...cartItems.map((item) => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('${item.productName} x${item.quantity}'),
-                  Text('\$${item.subtotal.toStringAsFixed(2)}'),
-                ],
-              )),
+          ...cartItems.map(
+            (item) => Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('${item.productName} × ${item.quantity}'),
+                Text('\$${item.subtotal.toStringAsFixed(2)}'),
+              ],
+            ),
+          ),
           const Divider(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -216,98 +203,97 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         child: ElevatedButton(
           onPressed: orderState.isLoading ? null : _placeOrder,
           child: orderState.isLoading
-              ? const CircularProgressIndicator()
-              : Text('Pay \$${totals['total']!.toStringAsFixed(2)}'),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text('Place Order • \$${totals['total']!.toStringAsFixed(2)}'),
         ),
       ),
     );
   }
 
   // =====================================================
-  // ORDER CREATION (IDEMPOTENT & SAFE)
+  // ORDER SUBMISSION (UI → CONTROLLER)
   // =====================================================
 
   Future<void> _placeOrder() async {
     final address = ref.read(selectedAddressProvider);
     final cartItems = ref.read(cartItemsStreamProvider).value;
-    final totals = ref.read(cartTotalsProvider);
     final auth = ref.read(authStateProvider).value;
 
     if (address == null ||
         cartItems == null ||
         cartItems.isEmpty ||
         auth == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing checkout information')),
-      );
+      _snack('Missing checkout information');
       return;
     }
 
-    // 🔐 Generate idempotency key ONCE per checkout
-    var idempotencyKey = ref.read(checkoutIdempotencyKeyProvider);
-    if (idempotencyKey == null) {
-      idempotencyKey = '${auth.uid}_${DateTime.now().millisecondsSinceEpoch}';
-      ref.read(checkoutIdempotencyKeyProvider.notifier).state = idempotencyKey;
-    }
+    // Stable per-session idempotency key
+    var key = ref.read(checkoutIdempotencyKeyProvider);
+    key ??= '${auth.uid}_${DateTime.now().microsecondsSinceEpoch}';
+    ref.read(checkoutIdempotencyKeyProvider.notifier).state = key;
 
     try {
-      final orderNumber = await ref
-          .read(orderControllerProvider.notifier)
-          .generateOrderNumber();
-
-      final order = OrderModel(
-        id: idempotencyKey,
-        userId: auth.uid,
-        idempotencyKey: idempotencyKey, // ✅ FIXED
-        orderNumber: orderNumber,
-        items: cartItems
-            .map((item) => OrderItemModel(
-                  productId: item.productId,
-                  productName: item.productName,
-                  productSlug: item.productSlug,
-                  brandName: item.brandName,
-                  thumbnailUrl: item.thumbnailUrl,
-                  price: item.price,
-                  quantity: item.quantity,
-                  variantId: item.variantId,
-                  size: item.size,
-                  color: item.color,
-                ))
-            .toList(),
-        totalItems: cartItems.length,
-        subtotal: totals['subtotal']!,
-        discount: totals['savings']!,
-        shippingCost: 0,
-        tax: 0,
-        total: totals['total']!,
-        shippingAddress: ShippingAddressModel(
-          fullName: address.fullName,
-          phoneNumber: address.phoneNumber,
-          addressLine1: address.addressLine1,
-          addressLine2: address.addressLine2,
-          city: address.city,
-          state: address.state,
-          postalCode: address.postalCode,
-          country: address.country,
-        ),
-        paymentMethod: 'cod',
-        customerNote: _noteController.text.trim(),
-      );
-
-      final createdOrderId =
-          await ref.read(orderControllerProvider.notifier).createOrder(order);
+      final orderId =
+          await ref.read(orderControllerProvider.notifier).createOrder(
+                idempotencyKey: key,
+                address: address,
+                note: _noteController.text.trim(),
+                paymentMethod: ref.read(selectedPaymentMethodProvider),
+              );
 
       await ref.read(cartControllerProvider.notifier).clearCart();
       ref.read(checkoutIdempotencyKeyProvider.notifier).state = null;
 
       if (mounted) {
-        context.go('/orders/$createdOrderId/success');
+        context.go('/orders/$orderId/success');
       }
-    } catch (e, st) {
-      debugPrintStack(stackTrace: st);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Order failed: $e')),
-      );
+    } catch (e) {
+      _snack('Order failed: $e');
     }
   }
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+// =======================================================
+// SMALL UI HELPERS
+// =======================================================
+
+class _LoadingScaffold extends StatelessWidget {
+  const _LoadingScaffold();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: CircularProgressIndicator()));
+}
+
+class _ErrorScaffold extends StatelessWidget {
+  final String message;
+  const _ErrorScaffold(this.message);
+
+  @override
+  Widget build(BuildContext context) =>
+      Scaffold(body: Center(child: Text(message)));
+}
+
+Widget _EmptyCart(BuildContext context) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Text('Your cart is empty'),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: () => context.go('/'),
+          child: const Text('Continue Shopping'),
+        ),
+      ],
+    ),
+  );
 }

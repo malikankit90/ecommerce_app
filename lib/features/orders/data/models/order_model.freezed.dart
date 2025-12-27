@@ -670,14 +670,18 @@ abstract class _ShippingAddressModel implements ShippingAddressModel {
 
 /// @nodoc
 mixin _$OrderModel {
-  /// 🔑 Firestore document ID (server-generated)
+  /// 🔑 Firestore document ID
   String get id => throw _privateConstructorUsedError;
 
   /// 🔑 Auth UID
   String get userId => throw _privateConstructorUsedError;
 
-  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+  /// 🔁 Client-generated idempotency key
   String get idempotencyKey => throw _privateConstructorUsedError;
+
+  /// 🔒 Stock reservation IDs (ONE PER ITEM)
+  /// Order is INVALID without these
+  List<String> get reservationIds => throw _privateConstructorUsedError;
 
   /// Human-readable order number
   String get orderNumber =>
@@ -734,6 +738,7 @@ abstract class $OrderModelCopyWith<$Res> {
       {String id,
       String userId,
       String idempotencyKey,
+      List<String> reservationIds,
       String orderNumber,
       List<OrderItemModel> items,
       int totalItems,
@@ -781,6 +786,7 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
     Object? id = null,
     Object? userId = null,
     Object? idempotencyKey = null,
+    Object? reservationIds = null,
     Object? orderNumber = null,
     Object? items = null,
     Object? totalItems = null,
@@ -820,6 +826,10 @@ class _$OrderModelCopyWithImpl<$Res, $Val extends OrderModel>
           ? _value.idempotencyKey
           : idempotencyKey // ignore: cast_nullable_to_non_nullable
               as String,
+      reservationIds: null == reservationIds
+          ? _value.reservationIds
+          : reservationIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       orderNumber: null == orderNumber
           ? _value.orderNumber
           : orderNumber // ignore: cast_nullable_to_non_nullable
@@ -946,6 +956,7 @@ abstract class _$$OrderModelImplCopyWith<$Res>
       {String id,
       String userId,
       String idempotencyKey,
+      List<String> reservationIds,
       String orderNumber,
       List<OrderItemModel> items,
       int totalItems,
@@ -992,6 +1003,7 @@ class __$$OrderModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? userId = null,
     Object? idempotencyKey = null,
+    Object? reservationIds = null,
     Object? orderNumber = null,
     Object? items = null,
     Object? totalItems = null,
@@ -1031,6 +1043,10 @@ class __$$OrderModelImplCopyWithImpl<$Res>
           ? _value.idempotencyKey
           : idempotencyKey // ignore: cast_nullable_to_non_nullable
               as String,
+      reservationIds: null == reservationIds
+          ? _value._reservationIds
+          : reservationIds // ignore: cast_nullable_to_non_nullable
+              as List<String>,
       orderNumber: null == orderNumber
           ? _value.orderNumber
           : orderNumber // ignore: cast_nullable_to_non_nullable
@@ -1142,6 +1158,7 @@ class _$OrderModelImpl extends _OrderModel {
       {required this.id,
       required this.userId,
       required this.idempotencyKey,
+      final List<String> reservationIds = const <String>[],
       required this.orderNumber,
       required final List<OrderItemModel> items,
       required this.totalItems,
@@ -1167,10 +1184,11 @@ class _$OrderModelImpl extends _OrderModel {
       this.customerNote,
       this.adminNote,
       this.isDeleted = false})
-      : _items = items,
+      : _reservationIds = reservationIds,
+        _items = items,
         super._();
 
-  /// 🔑 Firestore document ID (server-generated)
+  /// 🔑 Firestore document ID
   @override
   final String id;
 
@@ -1178,9 +1196,23 @@ class _$OrderModelImpl extends _OrderModel {
   @override
   final String userId;
 
-  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+  /// 🔁 Client-generated idempotency key
   @override
   final String idempotencyKey;
+
+  /// 🔒 Stock reservation IDs (ONE PER ITEM)
+  /// Order is INVALID without these
+  final List<String> _reservationIds;
+
+  /// 🔒 Stock reservation IDs (ONE PER ITEM)
+  /// Order is INVALID without these
+  @override
+  @JsonKey()
+  List<String> get reservationIds {
+    if (_reservationIds is EqualUnmodifiableListView) return _reservationIds;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_reservationIds);
+  }
 
   /// Human-readable order number
   @override
@@ -1257,7 +1289,7 @@ class _$OrderModelImpl extends _OrderModel {
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, userId: $userId, idempotencyKey: $idempotencyKey, orderNumber: $orderNumber, items: $items, totalItems: $totalItems, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, tax: $tax, total: $total, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, status: $status, trackingNumber: $trackingNumber, carrier: $carrier, createdAt: $createdAt, updatedAt: $updatedAt, paidAt: $paidAt, confirmedAt: $confirmedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt, cancelledAt: $cancelledAt, createdAtMillis: $createdAtMillis, customerNote: $customerNote, adminNote: $adminNote, isDeleted: $isDeleted)';
+    return 'OrderModel(id: $id, userId: $userId, idempotencyKey: $idempotencyKey, reservationIds: $reservationIds, orderNumber: $orderNumber, items: $items, totalItems: $totalItems, subtotal: $subtotal, discount: $discount, shippingCost: $shippingCost, tax: $tax, total: $total, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, paymentStatus: $paymentStatus, status: $status, trackingNumber: $trackingNumber, carrier: $carrier, createdAt: $createdAt, updatedAt: $updatedAt, paidAt: $paidAt, confirmedAt: $confirmedAt, shippedAt: $shippedAt, deliveredAt: $deliveredAt, cancelledAt: $cancelledAt, createdAtMillis: $createdAtMillis, customerNote: $customerNote, adminNote: $adminNote, isDeleted: $isDeleted)';
   }
 
   @override
@@ -1269,6 +1301,8 @@ class _$OrderModelImpl extends _OrderModel {
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.idempotencyKey, idempotencyKey) ||
                 other.idempotencyKey == idempotencyKey) &&
+            const DeepCollectionEquality()
+                .equals(other._reservationIds, _reservationIds) &&
             (identical(other.orderNumber, orderNumber) ||
                 other.orderNumber == orderNumber) &&
             const DeepCollectionEquality().equals(other._items, _items) &&
@@ -1321,6 +1355,7 @@ class _$OrderModelImpl extends _OrderModel {
         id,
         userId,
         idempotencyKey,
+        const DeepCollectionEquality().hash(_reservationIds),
         orderNumber,
         const DeepCollectionEquality().hash(_items),
         totalItems,
@@ -1362,6 +1397,7 @@ abstract class _OrderModel extends OrderModel {
       {required final String id,
       required final String userId,
       required final String idempotencyKey,
+      final List<String> reservationIds,
       required final String orderNumber,
       required final List<OrderItemModel> items,
       required final int totalItems,
@@ -1389,7 +1425,7 @@ abstract class _OrderModel extends OrderModel {
       final bool isDeleted}) = _$OrderModelImpl;
   const _OrderModel._() : super._();
 
-  /// 🔑 Firestore document ID (server-generated)
+  /// 🔑 Firestore document ID
   @override
   String get id;
 
@@ -1397,9 +1433,14 @@ abstract class _OrderModel extends OrderModel {
   @override
   String get userId;
 
-  /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+  /// 🔁 Client-generated idempotency key
   @override
   String get idempotencyKey;
+
+  /// 🔒 Stock reservation IDs (ONE PER ITEM)
+  /// Order is INVALID without these
+  @override
+  List<String> get reservationIds;
 
   /// Human-readable order number
   @override

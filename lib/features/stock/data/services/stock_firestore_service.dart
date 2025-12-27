@@ -1,155 +1,124 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
-class StockFirestoreService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+/// =======================================================
+/// DTO — RESERVED STOCK ITEM (CALLABLE PAYLOAD)
+/// =======================================================
 
-  CollectionReference<Map<String, dynamic>> get _products =>
-      _firestore.collection('products');
+@immutable
+class ReservedStockItem {
+  final String productId;
+  final int quantity;
 
-  CollectionReference<Map<String, dynamic>> get _reservations =>
-      _firestore.collection('stock_reservations');
+  const ReservedStockItem({
+    required this.productId,
+    required this.quantity,
+  });
 
-  /// ---------------------------------------------------
-  /// RESERVE STOCK (ATOMIC + GUARDED)
-  /// ---------------------------------------------------
-  Future<String?> reserveStock({
-    required String productId,
-    required int quantity,
-    required String orderId,
-    Duration ttl = const Duration(minutes: 15),
-  }) async {
-    final reservationRef = _reservations.doc();
-
-    return _firestore.runTransaction<String?>((tx) async {
-      final productRef = _products.doc(productId);
-      final productSnap = await tx.get(productRef);
-
-      if (!productSnap.exists) return null;
-
-      final data = productSnap.data()!;
-      final int totalStock = (data['totalStock'] ?? 0) as int;
-      final int reservedStock = (data['reservedStock'] ?? 0) as int;
-
-      final int available = totalStock - reservedStock;
-      if (available < quantity || quantity <= 0) return null;
-
-      // 🔒 Reserve
-      tx.update(productRef, {
-        'reservedStock': reservedStock + quantity,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      tx.set(reservationRef, {
+  Map<String, dynamic> toJson() => {
         'productId': productId,
         'quantity': quantity,
-        'orderId': orderId,
-        'status': 'active',
-        'expiresAt': Timestamp.fromDate(
-          DateTime.now().add(ttl),
-        ),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
+}
 
-      return reservationRef.id;
-    });
-  }
+/// =======================================================
+/// STOCK SERVICE (CLOUD FUNCTION ONLY)
+/// =======================================================
+///
+/// RULES:
+/// - Client NEVER touches Firestore
+/// - Client NEVER commits or releases stock
+/// - ALL stock mutation is server-authoritative
+/// =======================================================
 
-  /// ---------------------------------------------------
-  /// COMMIT RESERVATION (PAYMENT SUCCESS / COD)
-  /// ---------------------------------------------------
-  Future<void> commitReservation(String reservationId) async {
-    await _firestore.runTransaction((tx) async {
-      final resRef = _reservations.doc(reservationId);
-      final resSnap = await tx.get(resRef);
+class StockFirestoreService {
+  static const String _reserveFunctionName = 'reserveStock';
 
-      if (!resSnap.exists) return;
+  final FirebaseFunctions _functions;
 
-      final data = resSnap.data()!;
-      if (data['status'] != 'active') return;
+  /// Prevent duplicate in-flight calls per order
+  Future<List<String>>? _inFlightReservation;
 
-      final expiresAt = (data['expiresAt'] as Timestamp).toDate();
-      if (expiresAt.isBefore(DateTime.now())) {
-        // ❌ Expired → release instead
-        await _releaseInternal(tx, resRef, data);
-        return;
-      }
-
-      final String productId = data['productId'];
-      final int quantity = data['quantity'];
-
-      final productRef = _products.doc(productId);
-      final productSnap = await tx.get(productRef);
-      if (!productSnap.exists) return;
-
-      final product = productSnap.data()!;
-      final int totalStock = product['totalStock'];
-      final int reservedStock = product['reservedStock'];
-
-      if (reservedStock < quantity || totalStock < quantity) {
-        // Data corruption guard
-        throw Exception('Invalid stock state during commit');
-      }
-
-      tx.update(productRef, {
-        'totalStock': totalStock - quantity,
-        'reservedStock': reservedStock - quantity,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      tx.update(resRef, {
-        'status': 'committed',
-        'committedAt': FieldValue.serverTimestamp(),
-      });
-    });
-  }
+  StockFirestoreService({
+    FirebaseFunctions? functions,
+  }) : _functions =
+            functions ?? FirebaseFunctions.instanceFor(region: 'us-central1');
 
   /// ---------------------------------------------------
-  /// RELEASE RESERVATION (FAIL / CANCEL / TIMEOUT)
+  /// RESERVE STOCK (SAFE + IDEMPOTENT AT CLIENT LEVEL)
   /// ---------------------------------------------------
-  Future<void> releaseReservation(String reservationId) async {
-    await _firestore.runTransaction((tx) async {
-      final resRef = _reservations.doc(reservationId);
-      final resSnap = await tx.get(resRef);
-
-      if (!resSnap.exists) return;
-
-      final data = resSnap.data()!;
-      if (data['status'] != 'active') return;
-
-      await _releaseInternal(tx, resRef, data);
-    });
-  }
-
-  /// ---------------------------------------------------
-  /// INTERNAL SAFE RELEASE
-  /// ---------------------------------------------------
-  Future<void> _releaseInternal(
-    Transaction tx,
-    DocumentReference<Map<String, dynamic>> resRef,
-    Map<String, dynamic> data,
-  ) async {
-    final String productId = data['productId'];
-    final int quantity = data['quantity'];
-
-    final productRef = _products.doc(productId);
-    final productSnap = await tx.get(productRef);
-    if (!productSnap.exists) return;
-
-    final product = productSnap.data()!;
-    final int reservedStock = product['reservedStock'];
-
-    if (reservedStock < quantity) {
-      throw Exception('Invalid reservedStock during release');
+  Future<List<String>> reserveStockForOrder({
+    required String orderId,
+    required List<ReservedStockItem> items,
+  }) {
+    if (_inFlightReservation != null) {
+      return _inFlightReservation!;
     }
 
-    tx.update(productRef, {
-      'reservedStock': reservedStock - quantity,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    _inFlightReservation =
+        _reserveStockInternal(orderId: orderId, items: items);
 
-    tx.update(resRef, {
-      'status': 'released',
-      'releasedAt': FieldValue.serverTimestamp(),
-    });
+    return _inFlightReservation!;
+  }
+
+  Future<List<String>> _reserveStockInternal({
+    required String orderId,
+    required List<ReservedStockItem> items,
+  }) async {
+    if (items.isEmpty) {
+      throw ArgumentError('Cannot reserve stock for empty item list');
+    }
+
+    debugPrint('🟢 reserveStock callable');
+    debugPrint('   ↳ orderId=$orderId');
+    debugPrint('   ↳ items=${items.length}');
+
+    final callable = _functions.httpsCallable(
+      _reserveFunctionName,
+      options: HttpsCallableOptions(
+        timeout: const Duration(seconds: 15),
+      ),
+    );
+
+    try {
+      final result = await callable.call(<String, dynamic>{
+        'orderId': orderId,
+        'items': items.map((e) => e.toJson()).toList(),
+      });
+
+      final data = result.data;
+
+      if (data is! Map || data['reservationIds'] is! List) {
+        throw StateError('Malformed response from $_reserveFunctionName');
+      }
+
+      final reservationIds = List<String>.from(data['reservationIds']);
+
+      if (reservationIds.isEmpty) {
+        throw StateError('No reservations returned from backend');
+      }
+
+      if (reservationIds.length != items.length) {
+        throw StateError(
+          'Reservation count mismatch: expected ${items.length}, got ${reservationIds.length}',
+        );
+      }
+
+      debugPrint(
+        '✅ Stock reserved (${reservationIds.length} reservations)',
+      );
+
+      return reservationIds;
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint(
+        '🔴 reserveStock failed [${e.code}] → ${e.message}',
+      );
+      rethrow;
+    } catch (e) {
+      debugPrint('🔴 reserveStock unknown error → $e');
+      rethrow;
+    } finally {
+      _inFlightReservation = null;
+    }
   }
 }

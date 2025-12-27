@@ -4,6 +4,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 part 'address_model.freezed.dart';
 part 'address_model.g.dart';
 
+/// =======================================================
+/// Timestamp Converter (FIRESTORE ONLY)
+/// =======================================================
+///
+/// ⚠️ DO NOT use this JSON for Cloud Functions
+/// =======================================================
+
 class TimestampConverter implements JsonConverter<DateTime?, Object?> {
   const TimestampConverter();
 
@@ -37,17 +44,18 @@ class AddressModel with _$AddressModel {
     required String state,
     required String postalCode,
     required String country,
-    
     @Default('home') String type, // home, work, other
     @Default(false) bool isDefault,
-    
     String? label,
     String? instructions,
-    
     @TimestampConverter() DateTime? createdAt,
     @TimestampConverter() DateTime? updatedAt,
     @Default(false) bool isDeleted,
   }) = _AddressModel;
+
+  // =====================================================
+  // FACTORIES
+  // =====================================================
 
   factory AddressModel.fromJson(Map<String, dynamic> json) =>
       _$AddressModelFromJson(json);
@@ -56,19 +64,61 @@ class AddressModel with _$AddressModel {
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data();
-    if (data == null) throw Exception('Address document is null');
-    return AddressModel.fromJson({...data, 'id': doc.id});
+    if (data == null) {
+      throw Exception('Address document is null');
+    }
+    return AddressModel.fromJson({
+      ...data,
+      'id': doc.id,
+    });
   }
+
+  // =====================================================
+  // FIRESTORE SERIALIZATION
+  // =====================================================
+  /// ✅ USE THIS FOR FIRESTORE ONLY
+  /// ❌ NEVER send this to Cloud Functions
+  // =====================================================
 
   Map<String, dynamic> toFirestore() {
     final json = toJson();
+
     json.remove('id');
-    
+
     json['createdAt'] ??= FieldValue.serverTimestamp();
     json['updatedAt'] ??= FieldValue.serverTimestamp();
-    
+
     return json;
   }
+
+  // =====================================================
+  // CLOUD FUNCTION SERIALIZATION (CRITICAL)
+  // =====================================================
+  /// ✅ SAFE for httpsCallable
+  /// ❌ No Timestamp
+  /// ❌ No FieldValue
+  /// ❌ No DateTime
+  // =====================================================
+
+  Map<String, dynamic> toCallableJson() {
+    return {
+      'fullName': fullName,
+      'phoneNumber': phoneNumber,
+      'addressLine1': addressLine1,
+      'addressLine2': addressLine2,
+      'city': city,
+      'state': state,
+      'postalCode': postalCode,
+      'country': country,
+      'type': type,
+      'label': label,
+      'instructions': instructions,
+    };
+  }
+
+  // =====================================================
+  // UI HELPERS
+  // =====================================================
 
   String get fullAddress {
     final parts = [

@@ -10,26 +10,24 @@ _$StockReservationImpl _$$StockReservationImplFromJson(
         Map<String, dynamic> json) =>
     _$StockReservationImpl(
       id: json['id'] as String,
-      productId: json['productId'] as String,
-      quantity: (json['quantity'] as num).toInt(),
       orderId: json['orderId'] as String,
+      userId: json['userId'] as String,
+      items: (json['items'] as List<dynamic>)
+          .map((e) => ReservedItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
       status: json['status'] as String? ?? 'active',
-      expiresAt: json['expiresAt'] == null
-          ? null
-          : DateTime.parse(json['expiresAt'] as String),
-      createdAt: json['createdAt'] == null
-          ? null
-          : DateTime.parse(json['createdAt'] as String),
+      expiresAt: DateTime.parse(json['expiresAt'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
 
 Map<String, dynamic> _$$StockReservationImplToJson(
         _$StockReservationImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'productId': instance.productId,
-      'quantity': instance.quantity,
       'orderId': instance.orderId,
+      'userId': instance.userId,
+      'items': instance.items,
       'status': instance.status,
-      'expiresAt': instance.expiresAt?.toIso8601String(),
-      'createdAt': instance.createdAt?.toIso8601String(),
+      'expiresAt': instance.expiresAt.toIso8601String(),
+      'createdAt': instance.createdAt.toIso8601String(),
     };

@@ -1,13 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
 import 'package:ecommerce_app/features/auth/presentation/providers/auth_providers.dart';
 
 import '../../data/models/order_model.dart';
-import '../../data/repositories/order_repository.dart';
 import '../../data/services/order_firestore_service.dart';
 
+import '../../../cart/presentation/providers/cart_providers.dart';
+import '../../../address/data/models/address_model.dart';
+
+import '../../../stock/data/repositories/stock_repository.dart';
+import '../../../stock/data/services/stock_firestore_service.dart'; // ✅ REQUIRED
+import '../../../stock/presentation/providers/stock_providers.dart';
+
 /// =======================================================
-/// Service Provider
+/// READ-ONLY FIRESTORE SERVICE
 /// =======================================================
 
 final orderFirestoreServiceProvider = Provider<OrderFirestoreService>((ref) {
@@ -15,168 +23,167 @@ final orderFirestoreServiceProvider = Provider<OrderFirestoreService>((ref) {
 });
 
 /// =======================================================
-/// Repository Provider
-/// =======================================================
-
-final orderRepositoryProvider = Provider<OrderRepository>((ref) {
-  return OrderRepository(
-    firestoreService: ref.read(orderFirestoreServiceProvider),
-  );
-});
-
-/// =======================================================
-/// User Orders Stream
+/// USER ORDERS STREAM (READ ONLY)
 /// =======================================================
 
 final userOrdersStreamProvider =
     StreamProvider.autoDispose<List<OrderModel>>((ref) async* {
-  final authState = await ref.watch(authStateProvider.future);
-
-  if (authState == null) {
-    debugPrint('🟡 userOrdersStreamProvider → authState null');
+  final user = await ref.watch(authStateProvider.future);
+  if (user == null) {
     yield [];
     return;
   }
 
-  debugPrint('🟢 userOrdersStreamProvider → uid=${authState.uid}');
-  yield* ref.read(orderRepositoryProvider).getUserOrdersStream(authState.uid);
+  yield* ref.read(orderFirestoreServiceProvider).getUserOrdersStream(user.uid);
 });
 
 /// =======================================================
-/// Order By ID Stream
+/// SINGLE ORDER STREAM (READ ONLY)
 /// =======================================================
 
 final orderByIdProvider =
     StreamProvider.family.autoDispose<OrderModel?, String>(
   (ref, orderId) async* {
-    final authState = await ref.watch(authStateProvider.future);
-
-    if (authState == null) {
-      debugPrint('🔴 orderByIdProvider → authState null');
+    final user = await ref.watch(authStateProvider.future);
+    if (user == null || orderId.isEmpty) {
       yield null;
       return;
     }
 
-    if (orderId.isEmpty) {
-      debugPrint('🔴 orderByIdProvider → EMPTY orderId');
-      yield null;
-      return;
-    }
-
-    debugPrint('🟢 orderByIdProvider → listening orderId=$orderId');
-    yield* ref.read(orderRepositoryProvider).getOrderStream(orderId);
+    yield* ref.read(orderFirestoreServiceProvider).getOrderStream(orderId);
   },
 );
 
 /// =======================================================
-/// Order Controller (IDEMPOTENT)
+/// ORDER CONTROLLER (WRITE = CLOUD FUNCTIONS ONLY)
 /// =======================================================
 
 final orderControllerProvider =
     StateNotifierProvider<OrderController, AsyncValue<String?>>((ref) {
   return OrderController(
-    orderRepository: ref.read(orderRepositoryProvider),
+    stockRepository: ref.read(stockRepositoryProvider),
+    ref: ref,
   );
 });
 
 class OrderController extends StateNotifier<AsyncValue<String?>> {
-  final OrderRepository _orderRepository;
+  final StockRepository _stockRepository;
+  final Ref _ref;
 
-  /// Guards idempotency at controller level
-  Future<String>? _inFlightCreate;
-  String? _lastCreatedOrderId;
+  Future<String>? _inFlight;
+  String? _lastOrderId;
 
   OrderController({
-    required OrderRepository orderRepository,
-  })  : _orderRepository = orderRepository,
+    required StockRepository stockRepository,
+    required Ref ref,
+  })  : _stockRepository = stockRepository,
+        _ref = ref,
         super(const AsyncValue.data(null));
 
-  /// ---------------------------------------------------
-  /// CREATE ORDER (IDEMPOTENT – SAFE TO RETRY)
-  /// ---------------------------------------------------
-  Future<String> createOrder(OrderModel order) {
-    // ✅ Already created → return cached ID
-    if (_lastCreatedOrderId != null) {
-      debugPrint(
-        '🟡 createOrder() → returning cached orderId=$_lastCreatedOrderId',
-      );
-      return Future.value(_lastCreatedOrderId);
+  // =====================================================
+  // CREATE ORDER (CF ONLY)
+  // =====================================================
+
+  Future<String> createOrder({
+    required String idempotencyKey,
+    required AddressModel address,
+    required String paymentMethod,
+    String? note,
+  }) {
+    if (_lastOrderId != null) {
+      return Future.value(_lastOrderId);
     }
 
-    // ✅ Already in progress → return same Future
-    if (_inFlightCreate != null) {
-      debugPrint('🟡 createOrder() → reusing in-flight request');
-      return _inFlightCreate!;
+    if (_inFlight != null) {
+      return _inFlight!;
     }
-
-    debugPrint('🟢 createOrder() START');
-    debugPrint('   ↳ userId=${order.userId}');
-    debugPrint('   ↳ orderNumber=${order.orderNumber}');
-    debugPrint('   ↳ idempotencyKey(order.id)=${order.id}');
 
     state = const AsyncValue.loading();
+    _inFlight = _createInternal(
+      idempotencyKey: idempotencyKey,
+      address: address,
+      paymentMethod: paymentMethod,
+      note: note,
+    );
 
-    _inFlightCreate = _createInternal(order);
-    return _inFlightCreate!;
+    return _inFlight!;
   }
 
-  Future<String> _createInternal(OrderModel order) async {
+  Future<String> _createInternal({
+    required String idempotencyKey,
+    required AddressModel address,
+    required String paymentMethod,
+    String? note,
+  }) async {
     try {
-      final orderId = await _orderRepository.createOrder(order);
+      final user = await _ref.read(authStateProvider.future);
+      if (user == null) {
+        throw StateError('User not authenticated');
+      }
 
-      debugPrint('✅ createOrder() SUCCESS → orderId=$orderId');
+      final cartItems = _ref.read(cartItemsStreamProvider).valueOrNull;
+      if (cartItems == null || cartItems.isEmpty) {
+        throw StateError('Cart is empty');
+      }
 
-      _lastCreatedOrderId = orderId;
+      debugPrint('🟢 reserveStock (CF)');
+
+      // ✅ STRONGLY TYPED LIST
+      final List<ReservedStockItem> items = cartItems
+          .map(
+            (item) => ReservedStockItem(
+              productId: item.productId,
+              quantity: item.quantity,
+            ),
+          )
+          .toList();
+
+      final reservationIds = await _stockRepository.reserveStockForOrder(
+        orderId: idempotencyKey,
+        items: items,
+      );
+
+      debugPrint('🟢 createOrder (CF)');
+
+      final callable = FirebaseFunctions.instanceFor(
+        region: 'us-central1',
+      ).httpsCallable('createOrder');
+
+      final result = await callable.call({
+        'idempotencyKey': idempotencyKey,
+        'reservationIds': reservationIds,
+        'paymentMethod': paymentMethod,
+        'customerNote': note ?? '',
+        'shippingAddress': address.toCallableJson(),
+      });
+
+      final orderId = result.data['orderId'] as String;
+
+      _lastOrderId = orderId;
       state = AsyncValue.data(orderId);
-
       return orderId;
     } catch (e, st) {
-      debugPrint('🔴 createOrder() FAILED → $e');
-      debugPrintStack(stackTrace: st);
-
-      _inFlightCreate = null;
+      _inFlight = null;
       state = AsyncValue.error(e, st);
       rethrow;
     }
   }
 
-  /// ---------------------------------------------------
-  /// CANCEL ORDER
-  /// ---------------------------------------------------
+  // =====================================================
+  // CANCEL (CF INTENT ONLY)
+  // =====================================================
+
   Future<void> cancelOrder(String orderId) async {
-    state = const AsyncValue.loading();
+    final callable = FirebaseFunctions.instanceFor(
+      region: 'us-central1',
+    ).httpsCallable('cancelOrder');
 
-    try {
-      debugPrint('🟡 cancelOrder() → orderId=$orderId');
-
-      await _orderRepository.cancelOrder(orderId);
-
-      debugPrint('✅ cancelOrder() SUCCESS');
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      debugPrint('🔴 cancelOrder() FAILED → $e');
-      debugPrintStack(stackTrace: st);
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
+    await callable.call({'orderId': orderId});
   }
 
-  /// ---------------------------------------------------
-  /// Generate Order Number
-  /// ---------------------------------------------------
-  Future<String> generateOrderNumber() async {
-    final number = await _orderRepository.generateOrderNumber();
-    debugPrint('🟢 generateOrderNumber() → $number');
-    return number;
-  }
-
-  /// ---------------------------------------------------
-  /// RESET (e.g. logout)
-  /// ---------------------------------------------------
   void reset() {
-    debugPrint('🟡 OrderController.reset()');
-    _inFlightCreate = null;
-    _lastCreatedOrderId = null;
+    _inFlight = null;
+    _lastOrderId = null;
     state = const AsyncValue.data(null);
   }
 }

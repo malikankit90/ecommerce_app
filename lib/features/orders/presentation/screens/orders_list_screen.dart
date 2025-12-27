@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../providers/order_providers.dart';
+import '../../data/models/order_model.dart';
 import 'package:ecommerce_app/features/auth/presentation/providers/auth_providers.dart';
 
 class OrdersListScreen extends ConsumerWidget {
@@ -28,9 +30,7 @@ class OrdersListScreen extends ConsumerWidget {
         final ordersAsync = ref.watch(userOrdersStreamProvider);
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('My Orders'),
-          ),
+          appBar: AppBar(title: const Text('My Orders')),
           body: ordersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => Center(
@@ -50,40 +50,7 @@ class OrdersListScreen extends ConsumerWidget {
             ),
             data: (orders) {
               if (orders.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 100,
-                        color: Colors.grey[300],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'No orders yet',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Start shopping to create your first order',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      ElevatedButton(
-                        onPressed: () => context.go('/products'),
-                        child: const Text('Browse Products'),
-                      ),
-                    ],
-                  ),
-                );
+                return _EmptyOrders(context);
               }
 
               return RefreshIndicator(
@@ -94,8 +61,7 @@ class OrdersListScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: orders.length,
                   itemBuilder: (context, index) {
-                    final order = orders[index];
-                    return _OrderCard(order: order);
+                    return _OrderCard(order: orders[index]);
                   },
                 ),
               );
@@ -107,8 +73,12 @@ class OrdersListScreen extends ConsumerWidget {
   }
 }
 
+// =======================================================
+// ORDER CARD
+// =======================================================
+
 class _OrderCard extends StatelessWidget {
-  final order;
+  final OrderModel order;
 
   const _OrderCard({required this.order});
 
@@ -175,30 +145,7 @@ class _OrderCard extends StatelessWidget {
               ),
               if (order.trackingNumber != null) ...[
                 const SizedBox(height: 12),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.local_shipping,
-                          size: 16, color: Colors.blue.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tracking: ${order.trackingNumber}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _TrackingBadge(order.trackingNumber!),
               ],
             ],
           ),
@@ -207,38 +154,50 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
+  // =====================================================
+  // STATUS CHIP
+  // =====================================================
+
   Widget _buildStatusChip(String status) {
     Color color;
     IconData icon;
+    String label;
 
     switch (status) {
-      case 'payment_pending': // ✅ FIXED
+      case 'payment_pending':
         color = Colors.orange;
         icon = Icons.pending;
+        label = 'Payment Pending';
         break;
       case 'confirmed':
         color = Colors.blue;
         icon = Icons.check_circle;
+        label = 'Confirmed';
         break;
       case 'processing':
         color = Colors.purple;
         icon = Icons.autorenew;
+        label = 'Processing';
         break;
       case 'shipped':
         color = Colors.teal;
         icon = Icons.local_shipping;
+        label = 'Shipped';
         break;
       case 'delivered':
         color = Colors.green;
         icon = Icons.done_all;
+        label = 'Delivered';
         break;
       case 'cancelled':
         color = Colors.red;
         icon = Icons.cancel;
+        label = 'Cancelled';
         break;
       default:
         color = Colors.grey;
         icon = Icons.help;
+        label = status;
     }
 
     return Container(
@@ -254,7 +213,7 @@ class _OrderCard extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
           Text(
-            _capitalizeFirst(status),
+            label,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -266,13 +225,77 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime? date) {
+  static String _formatDate(DateTime? date) {
     if (date == null) return 'N/A';
     return '${date.day}/${date.month}/${date.year}';
   }
+}
 
-  String _capitalizeFirst(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
+// =======================================================
+// SMALL UI HELPERS
+// =======================================================
+
+class _TrackingBadge extends StatelessWidget {
+  final String tracking;
+
+  const _TrackingBadge(this.tracking);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.local_shipping, size: 16, color: Colors.blue.shade700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Tracking: $tracking',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+Widget _EmptyOrders(BuildContext context) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.shopping_bag_outlined, size: 100, color: Colors.grey[300]),
+        const SizedBox(height: 24),
+        Text(
+          'No orders yet',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Start shopping to create your first order',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[500],
+          ),
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton(
+          onPressed: () => context.go('/products'),
+          child: const Text('Browse Products'),
+        ),
+      ],
+    ),
+  );
 }

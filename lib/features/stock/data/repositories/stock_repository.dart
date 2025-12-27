@@ -1,5 +1,16 @@
 import '../services/stock_firestore_service.dart';
 
+/// =======================================================
+/// STOCK REPOSITORY
+/// =======================================================
+///
+/// ROLE:
+/// - Thin abstraction over StockFirestoreService
+/// - No serialization
+/// - No Firestore logic
+/// - No business rules
+/// =======================================================
+
 class StockRepository {
   final StockFirestoreService _service;
 
@@ -8,32 +19,19 @@ class StockRepository {
   }) : _service = service;
 
   /// ---------------------------------------------------
-  /// Reserve stock for a SINGLE product
-  /// Returns reservationId or null if insufficient stock
+  /// RESERVE STOCK (ORDER-LEVEL)
+  ///
+  /// - Delegates to Cloud Function
+  /// - Returns reservationIds
+  /// - Client NEVER commits or releases stock
   /// ---------------------------------------------------
-  Future<String?> reserve({
-    required String productId,
-    required int quantity,
+  Future<List<String>> reserveStockForOrder({
     required String orderId,
+    required List<ReservedStockItem> items,
   }) {
-    return _service.reserveStock(
-      productId: productId,
-      quantity: quantity,
+    return _service.reserveStockForOrder(
       orderId: orderId,
+      items: items,
     );
-  }
-
-  /// ---------------------------------------------------
-  /// Commit a reservation (payment success / COD)
-  /// ---------------------------------------------------
-  Future<void> commitReservation(String reservationId) {
-    return _service.commitReservation(reservationId);
-  }
-
-  /// ---------------------------------------------------
-  /// Release a reservation (failure / timeout / rollback)
-  /// ---------------------------------------------------
-  Future<void> releaseReservation(String reservationId) {
-    return _service.releaseReservation(reservationId);
   }
 }

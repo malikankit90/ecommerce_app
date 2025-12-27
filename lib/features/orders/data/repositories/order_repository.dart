@@ -25,21 +25,14 @@ class OrderRepository {
   }
 
   // =====================================================
-  // ORDERS — WRITE
+  // ORDERS — CREATE
   // =====================================================
 
-  /// -----------------------------------------------------
-  /// CREATE ORDER (IDEMPOTENT)
-  ///
-  /// IMPORTANT:
-  /// - order.id IS the idempotency key
-  /// - Safe to retry
-  /// - May return EXISTING orderId
-  /// -----------------------------------------------------
   Future<String> createOrder(OrderModel order) async {
     debugPrint('🟢 OrderRepository.createOrder');
     debugPrint('   ↳ userId=${order.userId}');
-    debugPrint('   ↳ idempotencyKey(order.id)=${order.id}');
+    debugPrint('   ↳ idempotencyKey=${order.idempotencyKey}');
+    debugPrint('   ↳ reservationIds=${order.reservationIds}');
     debugPrint('   ↳ orderNumber=${order.orderNumber}');
 
     final orderId = await _firestoreService.createOrder(order);
@@ -48,19 +41,36 @@ class OrderRepository {
     return orderId;
   }
 
-  /// -----------------------------------------------------
-  /// CANCEL ORDER
-  /// (Firestore rules enforce safety)
-  /// -----------------------------------------------------
+  // =====================================================
+  // ORDERS — STATE UPDATES (SERVER / WEBHOOK)
+  // =====================================================
+
+  Future<void> updatePaymentSuccess(String orderId) async {
+    debugPrint('🟢 OrderRepository.updatePaymentSuccess → $orderId');
+    await _firestoreService.updatePaymentSuccess(orderId);
+    debugPrint('✅ Payment marked SUCCESS → $orderId');
+  }
+
+  Future<void> updatePaymentFailure(String orderId) async {
+    debugPrint('🟡 OrderRepository.updatePaymentFailure → $orderId');
+    await _firestoreService.updatePaymentFailure(orderId);
+    debugPrint('✅ Payment marked FAILED → $orderId');
+  }
+
+  // =====================================================
+  // ORDERS — CANCEL
+  // =====================================================
+
   Future<void> cancelOrder(String orderId) async {
     debugPrint('🟡 OrderRepository.cancelOrder → orderId=$orderId');
     await _firestoreService.cancelOrder(orderId);
     debugPrint('✅ OrderRepository.cancelOrder → success');
   }
 
-  /// -----------------------------------------------------
-  /// GENERATE ORDER NUMBER
-  /// -----------------------------------------------------
+  // =====================================================
+  // UTIL
+  // =====================================================
+
   Future<String> generateOrderNumber() async {
     final number = await _firestoreService.generateOrderNumber();
     debugPrint('🟢 OrderRepository.generateOrderNumber → $number');

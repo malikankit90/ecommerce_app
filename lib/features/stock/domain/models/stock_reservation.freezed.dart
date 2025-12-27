@@ -20,14 +20,24 @@ StockReservation _$StockReservationFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$StockReservation {
+  /// Firestore document ID
   String get id => throw _privateConstructorUsedError;
-  String get productId => throw _privateConstructorUsedError;
-  int get quantity => throw _privateConstructorUsedError;
+
+  /// Ownership
   String get orderId => throw _privateConstructorUsedError;
-  String get status =>
-      throw _privateConstructorUsedError; // active | committed | released | expired
-  DateTime? get expiresAt => throw _privateConstructorUsedError;
-  DateTime? get createdAt => throw _privateConstructorUsedError;
+  String get userId => throw _privateConstructorUsedError;
+
+  /// All reserved items (atomic unit)
+  List<ReservedItem> get items => throw _privateConstructorUsedError;
+
+  /// active | committed | released | expired
+  String get status => throw _privateConstructorUsedError;
+
+  /// Hard TTL – must be enforced by backend cleanup
+  DateTime get expiresAt => throw _privateConstructorUsedError;
+
+  /// Audit
+  DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this StockReservation to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -47,12 +57,12 @@ abstract class $StockReservationCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String productId,
-      int quantity,
       String orderId,
+      String userId,
+      List<ReservedItem> items,
       String status,
-      DateTime? expiresAt,
-      DateTime? createdAt});
+      DateTime expiresAt,
+      DateTime createdAt});
 }
 
 /// @nodoc
@@ -71,42 +81,42 @@ class _$StockReservationCopyWithImpl<$Res, $Val extends StockReservation>
   @override
   $Res call({
     Object? id = null,
-    Object? productId = null,
-    Object? quantity = null,
     Object? orderId = null,
+    Object? userId = null,
+    Object? items = null,
     Object? status = null,
-    Object? expiresAt = freezed,
-    Object? createdAt = freezed,
+    Object? expiresAt = null,
+    Object? createdAt = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      productId: null == productId
-          ? _value.productId
-          : productId // ignore: cast_nullable_to_non_nullable
-              as String,
-      quantity: null == quantity
-          ? _value.quantity
-          : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
       orderId: null == orderId
           ? _value.orderId
           : orderId // ignore: cast_nullable_to_non_nullable
               as String,
+      userId: null == userId
+          ? _value.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as String,
+      items: null == items
+          ? _value.items
+          : items // ignore: cast_nullable_to_non_nullable
+              as List<ReservedItem>,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String,
-      expiresAt: freezed == expiresAt
+      expiresAt: null == expiresAt
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: freezed == createdAt
+              as DateTime,
+      createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
+              as DateTime,
     ) as $Val);
   }
 }
@@ -121,12 +131,12 @@ abstract class _$$StockReservationImplCopyWith<$Res>
   @useResult
   $Res call(
       {String id,
-      String productId,
-      int quantity,
       String orderId,
+      String userId,
+      List<ReservedItem> items,
       String status,
-      DateTime? expiresAt,
-      DateTime? createdAt});
+      DateTime expiresAt,
+      DateTime createdAt});
 }
 
 /// @nodoc
@@ -143,81 +153,100 @@ class __$$StockReservationImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? productId = null,
-    Object? quantity = null,
     Object? orderId = null,
+    Object? userId = null,
+    Object? items = null,
     Object? status = null,
-    Object? expiresAt = freezed,
-    Object? createdAt = freezed,
+    Object? expiresAt = null,
+    Object? createdAt = null,
   }) {
     return _then(_$StockReservationImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      productId: null == productId
-          ? _value.productId
-          : productId // ignore: cast_nullable_to_non_nullable
-              as String,
-      quantity: null == quantity
-          ? _value.quantity
-          : quantity // ignore: cast_nullable_to_non_nullable
-              as int,
       orderId: null == orderId
           ? _value.orderId
           : orderId // ignore: cast_nullable_to_non_nullable
               as String,
+      userId: null == userId
+          ? _value.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as String,
+      items: null == items
+          ? _value._items
+          : items // ignore: cast_nullable_to_non_nullable
+              as List<ReservedItem>,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as String,
-      expiresAt: freezed == expiresAt
+      expiresAt: null == expiresAt
           ? _value.expiresAt
           : expiresAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
-      createdAt: freezed == createdAt
+              as DateTime,
+      createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime?,
+              as DateTime,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$StockReservationImpl implements _StockReservation {
+class _$StockReservationImpl extends _StockReservation {
   const _$StockReservationImpl(
       {required this.id,
-      required this.productId,
-      required this.quantity,
       required this.orderId,
+      required this.userId,
+      required final List<ReservedItem> items,
       this.status = 'active',
-      this.expiresAt,
-      this.createdAt});
+      required this.expiresAt,
+      required this.createdAt})
+      : _items = items,
+        super._();
 
   factory _$StockReservationImpl.fromJson(Map<String, dynamic> json) =>
       _$$StockReservationImplFromJson(json);
 
+  /// Firestore document ID
   @override
   final String id;
-  @override
-  final String productId;
-  @override
-  final int quantity;
+
+  /// Ownership
   @override
   final String orderId;
   @override
+  final String userId;
+
+  /// All reserved items (atomic unit)
+  final List<ReservedItem> _items;
+
+  /// All reserved items (atomic unit)
+  @override
+  List<ReservedItem> get items {
+    if (_items is EqualUnmodifiableListView) return _items;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_items);
+  }
+
+  /// active | committed | released | expired
+  @override
   @JsonKey()
   final String status;
-// active | committed | released | expired
+
+  /// Hard TTL – must be enforced by backend cleanup
   @override
-  final DateTime? expiresAt;
+  final DateTime expiresAt;
+
+  /// Audit
   @override
-  final DateTime? createdAt;
+  final DateTime createdAt;
 
   @override
   String toString() {
-    return 'StockReservation(id: $id, productId: $productId, quantity: $quantity, orderId: $orderId, status: $status, expiresAt: $expiresAt, createdAt: $createdAt)';
+    return 'StockReservation(id: $id, orderId: $orderId, userId: $userId, items: $items, status: $status, expiresAt: $expiresAt, createdAt: $createdAt)';
   }
 
   @override
@@ -226,11 +255,9 @@ class _$StockReservationImpl implements _StockReservation {
         (other.runtimeType == runtimeType &&
             other is _$StockReservationImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.productId, productId) ||
-                other.productId == productId) &&
-            (identical(other.quantity, quantity) ||
-                other.quantity == quantity) &&
             (identical(other.orderId, orderId) || other.orderId == orderId) &&
+            (identical(other.userId, userId) || other.userId == userId) &&
+            const DeepCollectionEquality().equals(other._items, _items) &&
             (identical(other.status, status) || other.status == status) &&
             (identical(other.expiresAt, expiresAt) ||
                 other.expiresAt == expiresAt) &&
@@ -240,8 +267,15 @@ class _$StockReservationImpl implements _StockReservation {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, productId, quantity, orderId,
-      status, expiresAt, createdAt);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      orderId,
+      userId,
+      const DeepCollectionEquality().hash(_items),
+      status,
+      expiresAt,
+      createdAt);
 
   /// Create a copy of StockReservation
   /// with the given fields replaced by the non-null parameter values.
@@ -260,33 +294,45 @@ class _$StockReservationImpl implements _StockReservation {
   }
 }
 
-abstract class _StockReservation implements StockReservation {
+abstract class _StockReservation extends StockReservation {
   const factory _StockReservation(
       {required final String id,
-      required final String productId,
-      required final int quantity,
       required final String orderId,
+      required final String userId,
+      required final List<ReservedItem> items,
       final String status,
-      final DateTime? expiresAt,
-      final DateTime? createdAt}) = _$StockReservationImpl;
+      required final DateTime expiresAt,
+      required final DateTime createdAt}) = _$StockReservationImpl;
+  const _StockReservation._() : super._();
 
   factory _StockReservation.fromJson(Map<String, dynamic> json) =
       _$StockReservationImpl.fromJson;
 
+  /// Firestore document ID
   @override
   String get id;
-  @override
-  String get productId;
-  @override
-  int get quantity;
+
+  /// Ownership
   @override
   String get orderId;
   @override
-  String get status; // active | committed | released | expired
+  String get userId;
+
+  /// All reserved items (atomic unit)
   @override
-  DateTime? get expiresAt;
+  List<ReservedItem> get items;
+
+  /// active | committed | released | expired
   @override
-  DateTime? get createdAt;
+  String get status;
+
+  /// Hard TTL – must be enforced by backend cleanup
+  @override
+  DateTime get expiresAt;
+
+  /// Audit
+  @override
+  DateTime get createdAt;
 
   /// Create a copy of StockReservation
   /// with the given fields replaced by the non-null parameter values.

@@ -49,7 +49,7 @@ class ShippingAddressModel with _$ShippingAddressModel {
 }
 
 /// =======================================================
-/// ORDER MODEL (IDEMPOTENT)
+/// ORDER MODEL (STOCK-SAFE + IDEMPOTENT)
 /// =======================================================
 
 @freezed
@@ -57,14 +57,18 @@ class OrderModel with _$OrderModel {
   const OrderModel._();
 
   const factory OrderModel({
-    /// 🔑 Firestore document ID (server-generated)
+    /// 🔑 Firestore document ID
     required String id,
 
     /// 🔑 Auth UID
     required String userId,
 
-    /// 🔁 IDEMPOTENCY KEY (client-generated, stable)
+    /// 🔁 Client-generated idempotency key
     required String idempotencyKey,
+
+    /// 🔒 Stock reservation IDs (ONE PER ITEM)
+    /// Order is INVALID without these
+    @Default(<String>[]) List<String> reservationIds,
 
     /// Human-readable order number
     required String orderNumber,
@@ -122,16 +126,29 @@ class OrderModel with _$OrderModel {
   ) {
     final data = doc.data();
     if (data == null) {
-      throw Exception('Order document is null');
+      throw StateError('Order document is null');
+    }
+
+    final reservationIds = List<String>.from(data['reservationIds'] ?? []);
+
+    if (reservationIds.isEmpty) {
+      throw StateError(
+        'Corrupted order: reservationIds missing for order ${doc.id}',
+      );
     }
 
     return OrderModel(
       id: doc.id,
       userId: data['userId'] as String,
       idempotencyKey: data['idempotencyKey'] as String,
+      reservationIds: reservationIds,
       orderNumber: data['orderNumber'] as String,
       items: (data['items'] as List)
-          .map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => OrderItemModel.fromJson(
+              Map<String, dynamic>.from(e),
+            ),
+          )
           .toList(),
       totalItems: data['totalItems'] as int,
       subtotal: (data['subtotal'] as num).toDouble(),
@@ -140,7 +157,7 @@ class OrderModel with _$OrderModel {
       tax: (data['tax'] as num).toDouble(),
       total: (data['total'] as num).toDouble(),
       shippingAddress: ShippingAddressModel.fromJson(
-        data['shippingAddress'] as Map<String, dynamic>,
+        Map<String, dynamic>.from(data['shippingAddress']),
       ),
       paymentMethod: data['paymentMethod'] as String,
       paymentStatus: data['paymentStatus'] ?? 'pending',
@@ -162,7 +179,7 @@ class OrderModel with _$OrderModel {
   }
 
   /// =====================================================
-  /// DOMAIN HELPERS (UI + RULE SAFETY)
+  /// DOMAIN HELPERS (SINGLE SOURCE OF TRUTH)
   /// =====================================================
 
   String get statusDisplay {
@@ -186,11 +203,7 @@ class OrderModel with _$OrderModel {
     }
   }
 
-  /// ✅ Matches Firestore rules EXACTLY
   bool get canCancel => status == 'payment_pending' || status == 'confirmed';
-
-  bool get isActive =>
-      status != 'delivered' && status != 'cancelled' && status != 'failed';
 
   bool get isFinal =>
       status == 'delivered' || status == 'cancelled' || status == 'failed';
