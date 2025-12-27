@@ -2,25 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/order_model.dart';
 
-/// =====================================================
-/// ORDER FIRESTORE SERVICE (READ-ONLY)
-/// =====================================================
-///
-/// ❗ IMPORTANT ARCHITECTURAL GUARANTEE
-/// ----------------------------------
-/// This service:
-/// - NEVER creates orders
-/// - NEVER updates orders
-/// - NEVER cancels orders
-/// - NEVER touches payment state
-///
-/// All order mutations happen ONLY via Cloud Functions.
-/// Flutter is a READ-ONLY consumer of /orders.
-///
-/// If you ever feel tempted to add a write here:
-/// 👉 stop — you are breaking server authority.
-/// =====================================================
-
 class OrderFirestoreService {
   OrderFirestoreService({
     FirebaseFirestore? firestore,
@@ -42,13 +23,14 @@ class OrderFirestoreService {
   }
 
   // =====================================================
-  // READ — USER ORDERS (LIST)
+  // READ — USER ORDERS (LIST) ✅ FINAL FIX
   // =====================================================
   Stream<List<OrderModel>> getUserOrdersStream(String userId) {
     return _orders
         .where('userId', isEqualTo: userId)
         .where('isDeleted', isEqualTo: false)
-        .orderBy('createdAtMillis', descending: true)
+        // 🔥 ORDER BY DOCUMENT ID — WORKS IN ALL SDK VERSIONS
+        .orderBy('__name__', descending: true)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs.map(OrderModel.fromFirestore).toList(),

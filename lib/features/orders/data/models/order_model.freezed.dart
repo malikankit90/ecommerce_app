@@ -679,8 +679,7 @@ mixin _$OrderModel {
   /// 🔁 Client-generated idempotency key
   String get idempotencyKey => throw _privateConstructorUsedError;
 
-  /// 🔒 Stock reservation IDs (ONE PER ITEM)
-  /// Order is INVALID without these
+  /// 🔒 Stock reservation IDs
   List<String> get reservationIds => throw _privateConstructorUsedError;
 
   /// Human-readable order number
@@ -698,11 +697,8 @@ mixin _$OrderModel {
   ShippingAddressModel get shippingAddress =>
       throw _privateConstructorUsedError; // ---------------- PAYMENT ----------------
   String get paymentMethod => throw _privateConstructorUsedError;
-
-  /// pending | paid | failed | refunded
   String get paymentStatus =>
       throw _privateConstructorUsedError; // ---------------- ORDER STATE ----------------
-  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   String get status =>
       throw _privateConstructorUsedError; // ---------------- TRACKING ----------------
   String? get trackingNumber => throw _privateConstructorUsedError;
@@ -1200,12 +1196,10 @@ class _$OrderModelImpl extends _OrderModel {
   @override
   final String idempotencyKey;
 
-  /// 🔒 Stock reservation IDs (ONE PER ITEM)
-  /// Order is INVALID without these
+  /// 🔒 Stock reservation IDs
   final List<String> _reservationIds;
 
-  /// 🔒 Stock reservation IDs (ONE PER ITEM)
-  /// Order is INVALID without these
+  /// 🔒 Stock reservation IDs
   @override
   @JsonKey()
   List<String> get reservationIds {
@@ -1246,13 +1240,10 @@ class _$OrderModelImpl extends _OrderModel {
 // ---------------- PAYMENT ----------------
   @override
   final String paymentMethod;
-
-  /// pending | paid | failed | refunded
   @override
   @JsonKey()
   final String paymentStatus;
 // ---------------- ORDER STATE ----------------
-  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   @override
   @JsonKey()
   final String status;
@@ -1437,8 +1428,7 @@ abstract class _OrderModel extends OrderModel {
   @override
   String get idempotencyKey;
 
-  /// 🔒 Stock reservation IDs (ONE PER ITEM)
-  /// Order is INVALID without these
+  /// 🔒 Stock reservation IDs
   @override
   List<String> get reservationIds;
 
@@ -1464,11 +1454,8 @@ abstract class _OrderModel extends OrderModel {
       get shippingAddress; // ---------------- PAYMENT ----------------
   @override
   String get paymentMethod;
-
-  /// pending | paid | failed | refunded
   @override
   String get paymentStatus; // ---------------- ORDER STATE ----------------
-  /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
   @override
   String get status; // ---------------- TRACKING ----------------
   @override

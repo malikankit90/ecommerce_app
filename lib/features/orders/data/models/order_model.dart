@@ -25,6 +25,31 @@ class OrderItemModel with _$OrderItemModel {
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) =>
       _$OrderItemModelFromJson(json);
+
+  /// =====================================================
+  /// Firestore → Domain Mapper (FIX 1 – DEFENSIVE)
+  /// =====================================================
+  factory OrderItemModel.fromFirestore(Map<String, dynamic> data) {
+    return OrderItemModel(
+      // 🔒 productId MUST exist — fallback prevents crash
+      productId: (data['productId'] ?? '') as String,
+
+      // 🔥 Backend uses `name`, UI expects `productName`
+      productName:
+          (data['name'] ?? data['productName'] ?? 'Unknown Product') as String,
+
+      productSlug: (data['productSlug'] ?? '') as String,
+      brandName: (data['brandName'] ?? '') as String,
+      thumbnailUrl: (data['thumbnailUrl'] ?? '') as String,
+
+      price: (data['price'] as num).toDouble(),
+      quantity: data['quantity'] as int,
+
+      variantId: data['variantId'],
+      size: data['size'],
+      color: data['color'],
+    );
+  }
 }
 
 /// =======================================================
@@ -66,8 +91,7 @@ class OrderModel with _$OrderModel {
     /// 🔁 Client-generated idempotency key
     required String idempotencyKey,
 
-    /// 🔒 Stock reservation IDs (ONE PER ITEM)
-    /// Order is INVALID without these
+    /// 🔒 Stock reservation IDs
     @Default(<String>[]) List<String> reservationIds,
 
     /// Human-readable order number
@@ -89,12 +113,9 @@ class OrderModel with _$OrderModel {
 
     // ---------------- PAYMENT ----------------
     required String paymentMethod,
-
-    /// pending | paid | failed | refunded
     @Default('pending') String paymentStatus,
 
     // ---------------- ORDER STATE ----------------
-    /// payment_pending | confirmed | processing | shipped | delivered | cancelled | failed
     @Default('payment_pending') String status,
 
     // ---------------- TRACKING ----------------
@@ -130,7 +151,6 @@ class OrderModel with _$OrderModel {
     }
 
     final reservationIds = List<String>.from(data['reservationIds'] ?? []);
-
     if (reservationIds.isEmpty) {
       throw StateError(
         'Corrupted order: reservationIds missing for order ${doc.id}',
@@ -143,27 +163,33 @@ class OrderModel with _$OrderModel {
       idempotencyKey: data['idempotencyKey'] as String,
       reservationIds: reservationIds,
       orderNumber: data['orderNumber'] as String,
+
+      // ✅ SAFE ITEM MAPPING (FIX 1)
       items: (data['items'] as List)
           .map(
-            (e) => OrderItemModel.fromJson(
+            (e) => OrderItemModel.fromFirestore(
               Map<String, dynamic>.from(e),
             ),
           )
           .toList(),
+
       totalItems: data['totalItems'] as int,
       subtotal: (data['subtotal'] as num).toDouble(),
       discount: (data['discount'] as num).toDouble(),
       shippingCost: (data['shippingCost'] as num).toDouble(),
       tax: (data['tax'] as num).toDouble(),
       total: (data['total'] as num).toDouble(),
+
       shippingAddress: ShippingAddressModel.fromJson(
         Map<String, dynamic>.from(data['shippingAddress']),
       ),
+
       paymentMethod: data['paymentMethod'] as String,
       paymentStatus: data['paymentStatus'] ?? 'pending',
       status: data['status'] ?? 'payment_pending',
       trackingNumber: data['trackingNumber'],
       carrier: data['carrier'],
+
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       paidAt: (data['paidAt'] as Timestamp?)?.toDate(),
@@ -172,6 +198,7 @@ class OrderModel with _$OrderModel {
       deliveredAt: (data['deliveredAt'] as Timestamp?)?.toDate(),
       cancelledAt: (data['cancelledAt'] as Timestamp?)?.toDate(),
       createdAtMillis: data['createdAtMillis'],
+
       customerNote: data['customerNote'],
       adminNote: data['adminNote'],
       isDeleted: data['isDeleted'] ?? false,
@@ -179,7 +206,7 @@ class OrderModel with _$OrderModel {
   }
 
   /// =====================================================
-  /// DOMAIN HELPERS (SINGLE SOURCE OF TRUTH)
+  /// DOMAIN HELPERS
   /// =====================================================
 
   String get statusDisplay {

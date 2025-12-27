@@ -33,19 +33,13 @@ class OrdersListScreen extends ConsumerWidget {
           appBar: AppBar(title: const Text('My Orders')),
           body: ordersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text('Failed to load orders'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => ref.invalidate(userOrdersStreamProvider),
-                    child: const Text('Retry'),
-                  ),
-                ],
+            error: (error, stack) => Scaffold(
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  error.toString(),
+                  style: const TextStyle(color: Colors.red),
+                ),
               ),
             ),
             data: (orders) {

@@ -27,14 +27,20 @@ final orderFirestoreServiceProvider = Provider<OrderFirestoreService>((ref) {
 /// =======================================================
 
 final userOrdersStreamProvider =
-    StreamProvider.autoDispose<List<OrderModel>>((ref) async* {
-  final user = await ref.watch(authStateProvider.future);
-  if (user == null) {
-    yield [];
-    return;
-  }
+    StreamProvider.autoDispose<List<OrderModel>>((ref) {
+  final authState = ref.watch(authStateProvider);
 
-  yield* ref.read(orderFirestoreServiceProvider).getUserOrdersStream(user.uid);
+  return authState.when(
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+    data: (user) {
+      if (user == null) return const Stream.empty();
+
+      return ref
+          .read(orderFirestoreServiceProvider)
+          .getUserOrdersStream(user.uid);
+    },
+  );
 });
 
 /// =======================================================
